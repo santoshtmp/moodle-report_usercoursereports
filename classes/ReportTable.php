@@ -42,134 +42,195 @@ defined('MOODLE_INTERNAL') || die;
 class ReportTable {
 
     /**
-     * Get menu items table.
+     * 
+     */
+    public static function get_report_list($page_path) {
+        $type = optional_param('type', '', PARAM_TEXT);
+        $contents = '';
+        $contents .= html_writer::start_tag(
+            'div',
+            ['class' => 'report-usercoursereports-list mb-3']
+        );
+        $contents .= html_writer::start_tag(
+            'div',
+            ['class' => 'list-wrapper d-flex gap-3', 'style' => 'gap:10px']
+        );
+        $contents .= html_writer::link(
+            new moodle_url($page_path, ['type' => 'course']),
+            get_string('course'),
+            ['class' => ($type == 'course') ? 'active btn btn-primary' : 'btn btn-secondary']
+        );
+        $contents .= html_writer::link(
+            new moodle_url($page_path, ['type' => 'user']),
+            get_string('user'),
+            ['class' => ($type == 'user') ? 'active btn btn-primary' : 'btn btn-secondary']
+        );
+        $contents .= html_writer::end_tag('div');
+        $contents .= html_writer::end_tag('div');
+
+        return $contents;
+    }
+
+    /**
+     * Get course.
      *
-     * @param string $type
+     * @param string $page_path
      * @return string
      */
-    public static function get_menu_items_table($type) {
+    public static function get_course_info_table($page_url, $per_page, $page, $search, $category_id) {
         global $PAGE, $OUTPUT;
 
-        $menus = easycustmenu_handler::get_menu_items($type, 10);
-        $tableid = $type . '-table';
-        $PAGE->requires->js_call_amd('local_easycustmenu/menu_items', 'menu_item_reorder', [$tableid]);
-        $PAGE->requires->js_call_amd('local_easycustmenu/conformdelete', 'init');
-
-        $child_indentation = $OUTPUT->pix_icon('child_indentation', 'child-indentation', 'local_easycustmenu', ['class' => 'child-icon indentation']);
-        $child_arrow = $OUTPUT->pix_icon('child_arrow', 'child-arrow-icon', 'local_easycustmenu', ['class' => 'child-icon child-arrow']);
-
+        $all_course_info = CourseDataHandler::get_all_course_info($per_page, $page, $search, $category_id);
+        $tring_data = new stdClass();
+        $tring_data->data_from = $all_course_info['meta']['data_from'];
+        $tring_data->data_to = $all_course_info['meta']['data_to'];
+        $tring_data->data_total = $all_course_info['meta']['total_record'];
+        // 
         $contents = '';
-        $contents .= html_writer::start_tag('table', ['id' => $tableid, 'class' => 'generaltable']);
+        $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $tring_data));
+        $contents .= html_writer::start_tag('table', ['id' => 'course-report-table', 'class' => 'generaltable generalbox']);
         $contents .= html_writer::start_tag('thead');
         $contents .= html_writer::tag(
             'tr',
-            html_writer::tag('th', 'Label') .
-                html_writer::tag('th', 'Context') .
-                html_writer::tag('th', 'Action')
+            html_writer::tag('th', 'S.N') .
+                html_writer::tag('th', 'Name') .
+                html_writer::tag('th', 'Category') .
+                html_writer::tag('th', 'Enrol Student') .
+                html_writer::tag('th', 'Active Student') .
+                html_writer::tag('th', 'Course Format') .
+                html_writer::tag('th', 'Course visibility') .
+                html_writer::tag('th', 'Enrollment Option') .
+                html_writer::tag('th', 'Created Date')
         );
         $contents .= html_writer::end_tag('thead');
 
-        $contents .= html_writer::start_tag('tbody', ['data-type' => $type, 'data-action' => 'reorder']);
-        $contextoptions = easycustmenu_handler::get_menu_context_level();
+        $contents .= html_writer::start_tag('tbody', ['data-type' => 'course-report']);
 
-        foreach ($menus as $menu) {
-            // action menu
-            $core_renderer = $PAGE->get_renderer('core');
-            $action_menu = new action_menu();
-            $action_menu->set_kebab_trigger('Action', $core_renderer);
-            $action_menu->set_additional_classes('fields-actions');
-            $action_url_param = [
-                'type' => $type,
-                'id' => $menu->id,
-                'sesskey' => sesskey()
-            ];
-            $action_menu->add(new \action_menu_link(
-                new moodle_url('', ['action' => 'edit'] + $action_url_param),
-                new pix_icon('i/edit', 'edit'),
-                get_string('edit', 'local_easycustmenu'),
-                false,
-                [
-                    'data-id' => $menu->id,
-                ]
-            ));
-            $action_menu->add(new \action_menu_link(
-                new moodle_url('', ['action' => 'delete'] +  $action_url_param),
-                new pix_icon('i/delete', 'delete'),
-                get_string('delete', 'local_easycustmenu'),
-                false,
-                [
-                    'class' => 'text-danger delete-action',
-                    'data-id' => $menu->id,
-                    'data-title' => format_string($menu->menu_label),
-                    'data-heading' => get_string('delete_conform_heading', 'local_easycustmenu')
-                ]
-            ));
-
-            // output the menu item row
+        foreach ($all_course_info['data'] as $course) {
+            // output item row
             $contents .= html_writer::start_tag(
                 'tr',
                 [
-                    'data-id' => $menu->id,
-                    'data-depth' => (int)$menu->depth,
-                    'data-parent' => (int)$menu->parent,
-                    'data-menu_order' => (int)$menu->menu_order,
-                    'data-menu_label' => $menu->menu_label
+                    'data-id' => $course['id'],
+                    'data-categoryid' => $course['categoryid'],
+                    'data-shortname' => $course['shortname'],
                 ]
             );
-            $child_indentation_icon = '';
-            if ($menu->depth) {
-                for ($i = 0; $i < (int)$menu->depth - 1; $i++) {
-                    $child_indentation_icon .= $child_indentation;
-                }
-                $child_indentation_icon .= $child_arrow;
-            }
-
+            $contents .= html_writer::tag('td', $course['sn']);
             $contents .= html_writer::tag(
                 'td',
-                html_writer::tag(
-                    'span',
-                    html_writer::tag('span', $child_indentation_icon, ['class' => 'child-icon-wrapper']) .
-                        html_writer::tag('i', '', ['class' => 'icon fa fa-arrows-up-down-left-right fa-fw', 'role' => "img"]),
-                    ['class' => 'float-start drag-handle', "data-drag-type" => "move"]
-                ) .
-                    html_writer::tag(
-                        'span',
-                        format_string($menu->menu_label),
-                        ['class' => 'menu-label']
-                    )
+                html_writer::link(
+                    $course['course_link'],
+                    html_writer::img(
+                        $course['thumbnail_image_link'],
+                        $course['fullname'],
+                        ['class' => 'course-thumbnail']
+                    ) .
+                        html_writer::tag('div', $course['fullname'], ['class' => 'course-name pl-3 ']),
+                    ['class' => 'course-link d-flex justify-content-start']
+                ),
+                ['class' => 'course-name-wrapper']
             );
             $contents .= html_writer::tag(
                 'td',
-                html_writer::tag(
-                    'span',
-                    format_string($contextoptions[$menu->context_level]),
-                    ['class' => 'menu-context']
+                html_writer::link(
+                    $course['course_category_link'],
+                    $course['category_name']
                 )
             );
-            $contents .= html_writer::tag('td', $core_renderer->render($action_menu));
+            $contents .= html_writer::tag('td', $course['enroll_total_student']);
+            $contents .= html_writer::tag('td', $course['count_active_users']);
+            $contents .= html_writer::tag('td', get_string('pluginname', 'format_' . $course['course_format']));
+            $contents .= html_writer::tag('td', $course['course_visible'] ? get_string('show') : get_string('hide'));
+            $contents .= html_writer::tag('td', implode('<br> ', array_column($course['enrollment_methods'], 'name')));
+            $contents .= html_writer::tag('td', $course['course_timecreated']);
             $contents .= html_writer::end_tag('tr');
         }
-
         $contents .= html_writer::end_tag('tbody');
         $contents .= html_writer::end_tag('table');
-        $contents .= html_writer::tag(
-            'button',
-            get_string('save_order', 'local_easycustmenu'),
-            [
-                'id' => 'save_menu_reorder',
-                'class' => 'btn btn-primary mt-3',
-                'type' => 'button',
-                'style' => 'display: none;'
-            ]
+        $contents .= $OUTPUT->paging_bar(
+            $all_course_info['meta']['total_record'],
+            $page,
+            $per_page,
+            $page_url
         );
+
+        return $contents;
+    }
+    /**
+     * Get users.
+     *
+     * @param string $page_path
+     * @return string
+     */
+    public static function get_user_info_table($page_url, $per_page, $page, $search) {
+        global $PAGE, $OUTPUT;
+        // 
+        $all_user_info = UserDataHandler::get_all_user_info($per_page, $page, $search);
+        $tring_data = new stdClass();
+        $tring_data->data_from = $all_user_info['meta']['data_from'];
+        $tring_data->data_to = $all_user_info['meta']['data_to'];
+        $tring_data->data_total = $all_user_info['meta']['total_record'];
+        // 
+        $contents = '';
+        $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $tring_data));
+        $contents .= html_writer::start_tag('table', ['id' => 'user-report-table', 'class' => 'generaltable generalbox']);
+        $contents .= html_writer::start_tag('thead');
         $contents .= html_writer::tag(
-            'div',
-            html_writer::tag('div', $child_indentation, ['id' => 'child_indentation', 'style' => 'display: none;']) .
-                html_writer::tag('div', $child_arrow, ['id' => 'child_arrow', 'style' => 'display: none;']),
-            [
-                'id' => 'depth-reusable-icon',
-                'style' => 'display: none;'
-            ]
+            'tr',
+            html_writer::tag('th', 'S.N') .
+                html_writer::tag('th', 'Full Name') .
+                html_writer::tag('th', 'Email') .
+                html_writer::tag('th', 'Roles') .
+                html_writer::tag('th', 'Enrolled Course') .
+                html_writer::tag('th', 'Last access')
+        );
+        $contents .= html_writer::end_tag('thead');
+
+        $contents .= html_writer::start_tag('tbody', ['data-type' => 'user-report']);
+
+        foreach ($all_user_info['data'] as $user) {
+            // output item row
+            $contents .= html_writer::start_tag(
+                'tr',
+                [
+                    'data-id' => $user['id'],
+                    'data-username' => $user['username'],
+                ]
+            );
+            $contents .= html_writer::tag('td', $user['sn']);
+            $contents .= html_writer::tag(
+                'td',
+                html_writer::link(
+                    $user['profile_link'],
+                    html_writer::img(
+                        $user['profileimage_link'],
+                        $user['fullname'],
+                        ['class' => 'user-thumbnail',]
+                    ) .
+                        html_writer::tag(
+                            'div',
+                            html_writer::tag('span', $user['firstname'] . ' ' . $user['lastname']) .
+                                html_writer::tag('span',  '(' . $user['username'] . ')'),
+                            ['class' => 'pl-3 d-flex flex-column justify-content-start']
+                        ),
+                    ['class' => 'd-flex justify-content-start']
+                ),
+                ['class' => 'd-flex']
+            );
+            $contents .= html_writer::tag('td', $user['email']);
+            $contents .= html_writer::tag('td', implode('<br>', array_column($user['roles'], 'name')));
+            $contents .= html_writer::tag('td', count($user['enrolled_courses']));
+            $contents .= html_writer::tag('td', $user['lastaccess']);
+            $contents .= html_writer::end_tag('tr');
+        }
+        $contents .= html_writer::end_tag('tbody');
+        $contents .= html_writer::end_tag('table');
+        $contents .= $OUTPUT->paging_bar(
+            $all_user_info['meta']['total_record'],
+            $page,
+            $per_page,
+            $page_url
         );
 
         return $contents;

@@ -27,6 +27,7 @@ namespace report_usercoursereports;
 use completion_info;
 use core_course_category;
 use core_course_list_element;
+use course_modinfo;
 use moodle_url;
 use stdClass;
 
@@ -40,18 +41,25 @@ defined('MOODLE_INTERNAL') || die;
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class CourseDataHandler
-{
+class CourseDataHandler {
 
     /**
      * return course mod_customcert infomation
      * @param int $course_id course id     
-     * @return course mod custom certificate url
+     * @return string mod-custom certificate url
      */
-    public static function course_mod_customcert($course_id)
-    {
+    public static function course_mod_customcert($course_id, $user_id = '') {
         global $DB, $CFG;
-        $query = 'SELECT course_modules.id AS id
+        $customcert_data = [
+            'mod_id' => '',
+            'customcert_id' => '',
+            'certificate_url' => '',
+            'certificate_url_download' => '',
+            'certificate_issues' => false,
+            'certificate_issues_date' => 0,
+            'certificate_issues_code' => ''
+        ];
+        $query = 'SELECT course_modules.id AS id, course_modules.instance AS instance
             FROM {course_modules} course_modules 
             JOIN {modules} modules ON modules.id = course_modules.module
             WHERE course_modules.course = :courseid AND modules.name = :modules_name AND course_modules.visible = :course_modules_visible AND  course_modules.deletioninprogress = :deletioninprogress
@@ -66,11 +74,21 @@ class CourseDataHandler
         ];
         $mod_customcert = $DB->get_record_sql($query, $params);
         if ($mod_customcert) {
-            // $mod_customcert_url = $CFG->wwwroot . '/mod/customcert/view.php?id=' . $mod_customcert->id . '&downloadown=1';
-            $mod_customcert_url = $CFG->wwwroot . '/mod/customcert/view.php?id=' . $mod_customcert->id;
-            return $mod_customcert_url;
+            $customcert_data['mod_id'] = $mod_customcert->id;
+            $customcert_data['customcert_id'] = $mod_customcert->instance;
+            $customcert_data['certificate_url'] = $CFG->wwwroot . '/mod/customcert/view.php?id=' . $mod_customcert->id;
+            $customcert_data['certificate_url_download']  = $CFG->wwwroot . '/mod/customcert/view.php?id=' . $mod_customcert->id . '&downloadown=1';
+            if ($user_id && $mod_customcert->instance) {
+                // $DB->record_exists('customcert_issues', ['userid' => $user_id, 'customcertid' => $customcert_id])
+                $customcert_issues = $DB->get_record('customcert_issues', ['userid' => $user_id, 'customcertid' => $mod_customcert->instance]);
+                if ($customcert_issues) {
+                    $customcert_data['certificate_issues'] = true;
+                    $customcert_data['certificate_issues_date'] = $customcert_issues->timecreated;
+                    $customcert_data['certificate_issues_code'] = $customcert_issues->code;
+                }
+            }
         }
-        return '';
+        return $customcert_data;
     }
 
     /**
@@ -79,8 +97,7 @@ class CourseDataHandler
      * @param \stdClass $course
      * @return string
      */
-    public static function get_course_formatted_summary($course)
-    {
+    public static function get_course_formatted_summary($course) {
         global $CFG;
         if (!$course->summary) {
             return '';
@@ -100,8 +117,7 @@ class CourseDataHandler
      * @param boolen check to return default image or null if there is no course image
      * @return string course image url or null
      */
-    public static function get_course_image($course, $default_image_on_null = false)
-    {
+    public static function get_course_image($course, $default_image_on_null = false) {
         global $CFG, $OUTPUT;
         $course = new core_course_list_element($course);
 
@@ -128,8 +144,7 @@ class CourseDataHandler
      * @param core_course_list_element $course
      *
      */
-    protected function check_course($course_ref = '')
-    {
+    protected function check_course($course_ref = '') {
         global $COURSE, $DB;
         if (gettype($course_ref) == 'object') {
             $course = $course_ref;
@@ -148,8 +163,7 @@ class CourseDataHandler
         return  $course;
     }
 
-    public function get_section_progress($course_ref, $section)
-    {
+    public function get_section_progress($course_ref, $section) {
 
         global $OUTPUT, $USER, $COURSE;
         $course = $this->check_course($course_ref);
@@ -233,8 +247,7 @@ class CourseDataHandler
      * @param  int $courseid  Course ID
      * @return Custom field data.
      */
-    public static function get_course_metadata($courseid)
-    {
+    public static function get_course_metadata($courseid) {
         $handler = \core_customfield\handler::get_handler('core_course', 'course');
         $datas = $handler->get_instance_data($courseid);
         $metadata = [];
@@ -256,8 +269,7 @@ class CourseDataHandler
      *    $COURSE->customfields = \core_course\customfield\course_handler::create()->get_instance_data($COURSE->id);
      * }
      */
-    public static function get_custom_field_metadata($course_id, $return_format = 'raw')
-    {
+    public static function get_custom_field_metadata($course_id, $return_format = 'raw') {
         $handler = \core_course\customfield\course_handler::create();
         // $customfields = $handler->get_instance_data($course_id);
         $customfields = $handler->export_instance_data($course_id);
@@ -290,8 +302,7 @@ class CourseDataHandler
     /**
      * 
      */
-    public static function course_card_info($course_id, $default_values = false)
-    {
+    public static function course_card_info($course_id, $default_values = false) {
         global $DB, $CFG, $OUTPUT;
         $courseinfo = [];
 
@@ -300,16 +311,16 @@ class CourseDataHandler
             $course_categories = $DB->get_record('course_categories', ['id' => $course->category]);
 
             // get course enrolment plugin instance.
-            $enrollment_methods_info = [];
+            $enrollment_methods = [];
             $index = 0;
             $enrolinstances = enrol_get_instances((int)$course->id, true);
             foreach ($enrolinstances as $key => $courseenrolinstance) {
-                $enrollment_methods_info[$index]['enrol'] = $courseenrolinstance->enrol;
-                $enrollment_methods_info[$index]['name'] = ($courseenrolinstance->name) ?: $courseenrolinstance->enrol;
-                $enrollment_methods_info[$index]['cost'] = $courseenrolinstance->cost;
-                $enrollment_methods_info[$index]['currency'] = $courseenrolinstance->currency;
-                $enrollment_methods_info[$index]['roleid'] = $courseenrolinstance->roleid;
-                $enrollment_methods_info[$index]['role_name'] = '';
+                $enrollment_methods[$index]['enrol'] = $courseenrolinstance->enrol;
+                $enrollment_methods[$index]['name'] = ($courseenrolinstance->name) ?: $courseenrolinstance->enrol;
+                $enrollment_methods[$index]['cost'] = $courseenrolinstance->cost;
+                $enrollment_methods[$index]['currency'] = $courseenrolinstance->currency;
+                $enrollment_methods[$index]['roleid'] = $courseenrolinstance->roleid;
+                $enrollment_methods[$index]['role_name'] = '';
                 $index++;
             }
 
@@ -336,7 +347,7 @@ class CourseDataHandler
             $courseinfo['summary'] = self::get_course_formatted_summary($course);
             $courseinfo['short_summary'] = $summary;
             $courseinfo['arrow-right'] = $OUTPUT->image_url('icons/arrow-right', 'theme_yipl');
-            $courseinfo['enrollment_methods_info'] = $enrollment_methods_info;
+            $courseinfo['enrollment_methods'] = $enrollment_methods;
 
             // 
             return $courseinfo;
@@ -350,8 +361,7 @@ class CourseDataHandler
      * @param boolen $timestamp
      * @return array|boolen 
      */
-    public static function get_course_info($course_id, $default_values = false, $timestamp = true)
-    {
+    public static function get_course_info($course_id, $default_values = false, $timestamp = true) {
         global $DB, $CFG, $USER;
         $courseinfo = [];
 
@@ -369,17 +379,16 @@ class CourseDataHandler
             }
 
             // get course enrolment plugin instance.
-            $enrollment_methods_info =   $enrollment_methods = [];
+            $enrollment_methods = [];
             $index = 0;
             $enrolinstances = enrol_get_instances((int)$course->id, true);
             foreach ($enrolinstances as $key => $courseenrolinstance) {
-                $enrollment_methods[] = $courseenrolinstance->enrol;
-                $enrollment_methods_info[$index]['enrol'] = $courseenrolinstance->enrol;
-                $enrollment_methods_info[$index]['name'] = ($courseenrolinstance->name) ?: $courseenrolinstance->enrol;
-                $enrollment_methods_info[$index]['cost'] = $courseenrolinstance->cost;
-                $enrollment_methods_info[$index]['currency'] = $courseenrolinstance->currency;
-                $enrollment_methods_info[$index]['roleid'] = $courseenrolinstance->roleid;
-                $enrollment_methods_info[$index]['role_name'] = '';
+                $enrol_plugin = enrol_get_plugin($courseenrolinstance->enrol);
+                $enrollment_methods[$index]['enrol'] = $courseenrolinstance->enrol;
+                $enrollment_methods[$index]['name'] = $enrol_plugin->get_instance_name($courseenrolinstance);
+                $enrollment_methods[$index]['cost'] = $courseenrolinstance->cost;
+                $enrollment_methods[$index]['currency'] = $courseenrolinstance->currency;
+                $enrollment_methods[$index]['roleid'] = $courseenrolinstance->roleid;
                 $index++;
             }
 
@@ -391,7 +400,7 @@ class CourseDataHandler
                 if ($user_lastaccess_course) {
                     $count_active_users++;
                 }
-                $percentage = UtilUser_handler::get_user_course_progress($course, $enrolled_user->id);
+                $percentage = UserDataHandler::get_user_course_progress($course, $enrolled_user->id);
                 if ($percentage == 100) {
                     $count_course_completion++;
                 }
@@ -412,16 +421,18 @@ class CourseDataHandler
             $courseinfo['summary'] = self::get_course_formatted_summary($course);
             $courseinfo['course_sortorder'] = $course->sortorder;
             $courseinfo['course_total_sections'] = $numsections + 1;
+            $courseinfo['course_newsitems'] = $course->newsitems;
+            $courseinfo['course_format'] = $course->format;
             $courseinfo['course_visible'] = $course->visible;
-            $courseinfo['course_startdate'] = ($timestamp) ? $course->startdate : UtilUser_handler::get_user_date_time($course->startdate);
-            $courseinfo['course_enddate'] = ($timestamp) ? $course->enddate : UtilUser_handler::get_user_date_time($course->enddate);
-            $courseinfo['course_timecreated'] = ($timestamp) ? $course->timecreated : UtilUser_handler::get_user_date_time($course->timecreated);
-            $courseinfo['course_timemodified'] = ($timestamp) ? $course->timemodified : UtilUser_handler::get_user_date_time($course->timemodified);
+            $courseinfo['course_startdate'] = ($timestamp) ? $course->startdate : UserDataHandler::get_user_date_time($course->startdate);
+            $courseinfo['course_enddate'] = ($timestamp) ? $course->enddate : UserDataHandler::get_user_date_time($course->enddate);
+            $courseinfo['course_timecreated'] = ($timestamp) ? $course->timecreated : UserDataHandler::get_user_date_time($course->timecreated);
+            $courseinfo['course_timemodified'] = ($timestamp) ? $course->timemodified : UserDataHandler::get_user_date_time($course->timemodified);
             $courseinfo['enrollment_methods'] = $enrollment_methods;
-            $courseinfo['enrollment_methods_info'] = $enrollment_methods_info;
             $courseinfo['enroll_total_student'] = count_enrolled_users($context, 'moodle/course:isincompletionreports');
             $courseinfo['count_active_users'] = $count_active_users;
             $courseinfo['count_course_completion'] = $count_course_completion;
+            $courseinfo['count_activities'] = count(course_modinfo::get_array_of_activities($course, true));
             $courseinfo['course_customfields'] = self::get_custom_field_metadata($course_id);
 
             $extra_metadata = self::get_custom_field_metadata($course_id, 'key_value');
@@ -436,15 +447,10 @@ class CourseDataHandler
      * @param int $per_page 
      * @param int $page_number 
      * @param string $search_course 
-     * @param int $search_category_id 
+     * @param int $category_id 
      * @return array
      */
-    public static function get_all_course_info(
-        $per_page = 20,
-        $page_number = 1,
-        $search_course = '',
-        $search_category_id = 0
-    ) {
+    public static function get_all_course_info($per_page = 20, $page_number = 1, $search_course = '', $category_id = 0) {
         global $DB;
         $all_courses_info = [];
         // 
@@ -470,9 +476,9 @@ class CourseDataHandler
             $sql_params['course_id'] = $course_id;
             $where_condition[] = 'course.id = :course_id';
         }
-        if ($search_category_id) {
-            $sql_params['search_category_id'] = $search_category_id;
-            $where_condition[] = 'course.category = :search_category_id';
+        if ($category_id) {
+            $sql_params['category_id'] = $category_id;
+            $where_condition[] = 'course.category = :category_id';
         }
         if (count($where_condition) > 0) {
             $where_condition_apply .= " AND " . implode(" AND ", $where_condition);
@@ -497,50 +503,12 @@ class CourseDataHandler
             'total_page' => ceil(count($total_records) / $per_page),
             'current_page' => $page_number,
             'per_page' => $per_page,
-            'page_data_count' => $page_data_count
+            'page_data_count' => $page_data_count,
+            'data_from' => $limitfrom + 1,
+            'data_to' => $page_data_count,
         ];
         // return data
         return $all_courses_info;
-    }
-
-
-    /**
-     * course_enrolled_message
-     */
-    public static function course_enrolled_message($userid, $courseid)
-    {
-        global $SESSION;
-        $coursecontext = \context_course::instance($courseid);
-        if (is_enrolled($coursecontext, $userid) && isset($SESSION->first_course_enrolled_view)) {
-            $enroll_message = get_config('theme_yipl', 'course_enroll_message');
-            \core\notification::add($enroll_message, \core\output\notification::NOTIFY_SUCCESS);
-            $SESSION->first_course_enrolled_view = false;
-            unset($SESSION->first_course_enrolled_view);
-        }
-    }
-
-
-    /**
-     * course_module_created_update
-     * @param \core\event\course_module_created|\core\event\course_module_updated $event
-     */
-    public static function course_module_created_update_event($event)
-    {
-        global $DB, $CFG;
-        $cm_id = $event->objectid;
-        $modulename = $event->other['modulename'];
-        $data = new stdClass();
-        $data->id = $cm_id;
-        // For mod customcert the completion as null defined
-        if ($modulename == 'customcert') {
-            $cm = get_coursemodule_from_id('customcert', $cm_id, 0, false, MUST_EXIST);
-            $data->completion = 0;
-            // // update db
-            $DB->update_record('course_modules', $data);
-            //clear cache
-            require_once($CFG->libdir . '/adminlib.php');
-            purge_caches();
-        }
     }
 
     /**

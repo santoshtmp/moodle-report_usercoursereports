@@ -41,8 +41,7 @@ defined('MOODLE_INTERNAL') || die;
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class UserDataHandler
-{
+class UserDataHandler {
 
     /**
      * Returns List of courses where the user is enrolled
@@ -51,10 +50,9 @@ class UserDataHandler
      *
      * @return array
      */
-    public static function user_enrolled_courses($user)
-    {
+    public static function user_enrolled_courses($user) {
         $enrolledcourses = [];
-        if ($mycourses =  enrol_get_users_courses($user->id, true, '*', 'visible DESC, fullname ASC, sortorder ASC')) {
+        if ($mycourses =  enrol_get_users_courses($user->id, false, '*', 'visible DESC, fullname ASC, sortorder ASC')) {
             foreach ($mycourses as $mycourse) {
                 if ($mycourse->category) {
                     $coursecontext = \context_course::instance($mycourse->id);
@@ -102,45 +100,9 @@ class UserDataHandler
     }
 
     /**
-     * unenroll_all_course_users
-     */
-    protected static function unenroll_all_course_users()
-    {
-        global $DB;
-        try {
-            $query = 'SELECT * from {course} course WHERE course.id <> :frontpagecourse_id ';
-            $sql_params = [
-                'frontpagecourse_id' => 1
-            ];
-            $courses = $DB->get_records_sql($query, $sql_params);
-            foreach ($courses as $key => $course) {
-                $enrol = enrol_get_plugin('manual');
-                $instance = new stdClass();
-                $enrol_instances = enrol_get_instances($course->id, true);
-                foreach ($enrol_instances as $course_enrol_instance) {
-                    if ($course_enrol_instance->enrol == "manual") {
-                        $instance = $course_enrol_instance;
-                        break;
-                    }
-                }
-                $course_context = \context_course::instance($course->id);
-                $enrolled_users = get_enrolled_users($course_context);
-                foreach ($enrolled_users as $key => $user) {
-                    $unenroll_user = $enrol->unenrol_user($instance, $user->id);
-                }
-            }
-            return true;
-        } catch (\Throwable $th) {
-            //throw $th;
-            return false;
-        }
-    }
-
-    /**
      * return human readable date time
      */
-    public static function get_user_date_time($timestamp, $format = '%b %d, %Y')
-    {
+    public static function get_user_date_time($timestamp, $format = '%b %d, %Y') {
         // '%A, %b %d, %Y, %I:%M %p'
         $date = new \DateTime();
         $date->setTimestamp(intval($timestamp));
@@ -154,8 +116,7 @@ class UserDataHandler
      * @param int $enrolled_user_id id of enrolled user in course
      * @return int $percentage user course progress percentage
      */
-    public static function get_user_course_progress($course, $enrolled_user_id)
-    {
+    public static function get_user_course_progress($course, $enrolled_user_id) {
         global $CFG;
 
         require_once("$CFG->libdir/completionlib.php");
@@ -178,8 +139,7 @@ class UserDataHandler
      * @param int $enrolled_user_id id of enrolled user in course
      * @return object $userenrolments user course enrollment
      */
-    public static function course_user_enrolments($course_id, $enrolled_user_id)
-    {
+    public static function course_user_enrolments($course_id, $enrolled_user_id) {
         global $DB;
         $query = 'SELECT user_enrolments.status, user_enrolments.timecreated ,enrol.enrol
             FROM {user_enrolments} user_enrolments 
@@ -199,8 +159,7 @@ class UserDataHandler
      * @param \stdClass $user user object
      * @return url
      */
-    public static function get_user_profile_image_url($user)
-    {
+    public static function get_user_profile_image_url($user) {
         global $PAGE;
         $userpicture = new \user_picture($user);
         $userpicture->size = 1; // Size f1.
@@ -213,8 +172,7 @@ class UserDataHandler
      * @param \stdClass $user user object
      * @return url
      */
-    public static function get_user_description($user)
-    {
+    public static function get_user_description($user) {
         global $CFG;
 
         $usercontext = \context_user::instance($user->id, MUST_EXIST);
@@ -228,14 +186,6 @@ class UserDataHandler
             null
         );
         $description = format_text($description, $user->descriptionformat);
-        // \core_external\util::format_text(
-        //     $user->description,
-        //     $user->descriptionformat,
-        //     $usercontext,
-        //     'user',
-        //     'profile',
-        //     null
-        // );
         return $description;
     }
 
@@ -244,27 +194,24 @@ class UserDataHandler
      * @param \stdClass $user user object
      * @return url
      */
-    public static function get_user_customofields($user)
-    {
+    public static function get_user_customofields($user) {
         global $CFG;
-        require_once($CFG->dirroot . "/user/profile/lib.php"); // Custom field library. user_get_user_details
+        require_once($CFG->dirroot . "/user/profile/lib.php"); // Custom field library.
         $categories = profile_get_user_fields_with_data_by_category($user->id);
-        $user_customfields = array();
+        $user_customfields = [];
         foreach ($categories as $categoryid => $fields) {
             foreach ($fields as $formfield) {
-                if ($formfield->show_field_content()) {
+                if (!empty($formfield->data)) {
                     $user_customfields[] = [
-                        'name' => $formfield->display_name(),
-                        'value' => $formfield->data,
-                        'displayvalue' => $formfield->display_data(),
+                        'name' => $formfield->field->name, // Human-readable name
+                        'value' => $formfield->data,       // Raw value
+                        'displayvalue' => $formfield->display_data(), // Formatted value
                         'type' => $formfield->field->datatype,
                         'shortname' => $formfield->field->shortname
                     ];
                 }
             }
         }
-
-        return $user_customfields;
     }
 
     /**
@@ -273,8 +220,7 @@ class UserDataHandler
      * @param int $user user id
      * @return array or boolen 
      */
-    public static function get_user_info($user_id, $timestamp = true)
-    {
+    public static function get_user_info($user_id, $timestamp = true) {
         global $DB;
         $userinfo = [];
 
@@ -289,17 +235,16 @@ class UserDataHandler
                 $interests_tags = join(', ', $interests);
             }
 
-            // // User preferences.
-            // $preferences = array();
-            // $userpreferences = get_user_preferences();
-            // foreach ($userpreferences as $prefname => $prefvalue) {
-            //     $preferences[] = array('name' => $prefname, 'value' => $prefvalue);
-            // }
+            // User preferences.
+            $preferences = array();
+            $userpreferences = get_user_preferences();
+            foreach ($userpreferences as $prefname => $prefvalue) {
+                $preferences[] = array('name' => $prefname, 'value' => $prefvalue);
+            }
 
 
             // data arrange to return
-            $userinfo['id'] = UtilYIPL_handler::encrypt_decrypt_value($user->id, 'encrypt');
-            $userinfo['id_raw'] = $user->id;
+            $userinfo['id'] = $user->id;
             $userinfo['username'] = $user->username;
             $userinfo['email'] = $user->email;
             $userinfo['firstname'] = $user->firstname;
@@ -323,15 +268,13 @@ class UserDataHandler
             $userinfo['lastaccess'] = ($timestamp) ? $user->lastaccess : self::get_user_date_time($user->lastaccess, '');
             $userinfo['lastlogin'] = ($timestamp) ? $user->lastlogin : self::get_user_date_time($user->lastlogin, '');
             $userinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $user->id]))->out();
-            // $userinfo['preferences'] = $preferences;
+            $userinfo['preferences'] = $preferences;
             $userinfo['interests'] = $interests_tags;
             $userinfo['customofields'] = self::get_user_customofields($user);
             $userinfo['enrolled_courses'] = self::user_enrolled_courses($user);
-            $userinfo['sys_roles'] = self::get_all_roles(\context_system::instance(), $user->id);
-
+            $userinfo['roles'] = self::get_all_roles($user->id);
 
             // 
-
             return $userinfo;
         }
         return false;
@@ -344,11 +287,7 @@ class UserDataHandler
      * @param string $search_user 
      * @return array
      */
-    public static function get_all_user_info(
-        $per_page = 20,
-        $page_number = 1,
-        $search_user = '',
-    ) {
+    public static function get_all_user_info($per_page = 20, $page_number = 1, $search_user = '', $user_id = '', $role_id = '', $course_id = '') {
 
         global $DB;
         $all_user_info = [];
@@ -359,30 +298,50 @@ class UserDataHandler
             $limitfrom = $limitnum * $page_number;
         }
         // 
-        $user_id = '';
+        $query_join_apply = '';
+        $query_join = [];
         $sql_params = [
             'guest_user_id' => 1,
             'user_deleted' => 1,
             'user_suspended' => 1,
         ];
         $where_condition = [];
-        $where_condition_apply = "WHERE user.id <> :guest_user_id && user.deleted <> :user_deleted && user.suspended <> :user_suspended";
+        $where_condition_apply = " WHERE u.id <> :guest_user_id AND u.deleted <> :user_deleted AND u.suspended <> :user_suspended";
+        // 
         if ($search_user) {
             $sql_params['search_username'] = "%" . $search_user . "%";
             $sql_params['search_firstname'] = "%" . $search_user . "%";
             $sql_params['search_lastname'] = "%" . $search_user . "%";
             $sql_params['search_email'] = "%" . $search_user . "%";
-            $where_condition[] = '( user.username LIKE :search_username || user.firstname LIKE :search_firstname || user.lastname LIKE :search_lastname || user.email LIKE :search_email )';
+            $where_condition[] = '( u.username LIKE :search_username || u.firstname LIKE :search_firstname || u.lastname LIKE :search_lastname || u.email LIKE :search_email )';
         }
         if ($user_id) {
             $sql_params['user_id'] = $user_id;
-            $where_condition[] = 'user.id = :user_id';
+            $where_condition[] = 'u.id = :user_id';
         }
+        if ($role_id) {
+            $sql_params['role_id'] = $role_id;
+            $where_condition[] = 'ra.roleid = :role_id';
+            $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
+        }
+        if ($course_id) {
+            $sql_params['course_id'] = $course_id;
+            $sql_params['contextlevel'] = CONTEXT_COURSE;
+            $where_condition[] = 'ctx.instanceid = :course_id';
+            $where_condition[] = 'ctx.contextlevel = :contextlevel';
+            $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
+            $query_join['context'] = "INNER JOIN {context} AS ctx ON ra.contextid = ctx.id";
+        }
+        // 
         if (count($where_condition) > 0) {
             $where_condition_apply .= " AND " . implode(" AND ", $where_condition);
         }
+        if (count($query_join) > 0) {
+            $query_join_apply .= " " . implode(" ", $query_join);
+        }
         // 
-        $sql_query = 'SELECT * FROM {user} user ' . $where_condition_apply . ' ORDER BY user.id DESC ';
+        $sql_query = 'SELECT DISTINCT u.id FROM {user} AS u' . $query_join_apply . $where_condition_apply . ' ORDER BY u.id DESC ';
+        // var_dump($sql_query); die;
         // 
         $records = $DB->get_records_sql($sql_query, $sql_params, $limitfrom, $limitnum);
         $total_records = $DB->get_records_sql($sql_query, $sql_params);
@@ -401,7 +360,9 @@ class UserDataHandler
             'total_page' => ceil(count($total_records) / $per_page),
             'current_page' => $page_number,
             'per_page' => $per_page,
-            'page_data_count' => $page_data_count
+            'page_data_count' => $page_data_count,
+            'data_from' => $limitfrom + 1,
+            'data_to' => $page_data_count,
         ];
         // return data
         return $all_user_info;
@@ -410,33 +371,32 @@ class UserDataHandler
     /**
      * User roles
      */
-    public static function get_all_roles($context = '', $user_id = 0,  $return_param = "shortname")
-    {
-        global $PAGE;
-        $role_data = [];
+    public static function get_all_roles($user_id = 0) {
+        global $DB;
+        $roles_data = [];
+
         if (!$user_id) {
-            return;
+            return $roles_data;
         }
-        if (empty($context)) {
-            $context = $PAGE->context;
-            // $context_sys = \context_system::instance();
+
+        $sql = "SELECT r.*
+            FROM {role_assignments} ra
+            JOIN {role} r ON ra.roleid = r.id
+            WHERE ra.userid = ?";
+
+        $params = [$user_id];
+        $roles = $DB->get_records_sql($sql, $params);
+        foreach ($roles as $key => $role) {
+            $roles_data[] = [
+                'id' => $role->id,
+                'shortname' => $role->shortname,
+                'name' => $role->name ?: role_get_name($role)
+            ];
         }
         if (is_siteadmin($user_id)) {
-            $role_data[] = 'admin';
+            $roles_data[] = ['id' => '-1', 'shortname' => 'admin', 'name' => get_string('admin')];
         }
-        // else if (isloggedin() && !isguestuser()) {
-        //     $role_data[] = 'auth_user';
-        // }
-        foreach (get_user_roles($context, $user_id) as $key => $role) {
-            if ($return_param) {
-                $role_data[] = $role->$return_param;
-            } else {
-                $role_data[] = $role;
-            }
-        }
-
-
-        return $role_data;
+        return $roles_data;
     }
     // 
 }

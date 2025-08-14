@@ -30,6 +30,6 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'User Course Reports';
 $string['usercoursereports'] = 'User Course Reports';
-$string['usercoursereports:addinstance'] = 'Add a new User Course Reports block';
+$string['showingreportdatanumber'] = 'Showing {$a->data_from}-{$a->data_to} data out of {$a->data_total} data.';
 $string['usercoursereports:view'] = 'View User Course Reports';
 $string['privacy:metadata'] = 'The User Course Reports plugin does not store any personal data.';

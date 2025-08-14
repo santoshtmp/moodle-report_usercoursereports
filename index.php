@@ -22,9 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use report_usercoursereports\CourseDataHandler;
-use report_usercoursereports\UserDataHandler;
-use theme_skilllab\util\UtilReport_handler;
+use report_usercoursereports\ReportTable;
 
 // Get require config file.
 require_once(dirname(__FILE__) . '/../../config.php');
@@ -33,37 +31,44 @@ defined('MOODLE_INTERNAL') || die();
 // Get parameters.
 $id = optional_param('id', 0, PARAM_INT);
 $type = optional_param('type', '', PARAM_TEXT);
-$page_number = optional_param('page', 0, PARAM_INT);
 $search = optional_param('search', '', PARAM_TEXT);
+$page = optional_param('page', 0, PARAM_INT);
+$per_page = optional_param('per_page', 50, PARAM_INT);
+$category_id = optional_param('category_id', 0, PARAM_INT);
 $download = optional_param('download', 0, PARAM_INT);
 $context = \context_system::instance();
-$search_category_id = '';
-$per_page_data = 20;
 
-// Validate.
+// Access checks and validate.
 require_login(null, false);
-$allowedtypes = ['user', 'course'];
-if (!array_key_exists($type, $allowedtypes)) {
-    throw new moodle_exception('invalidtypeparam', 'report_usercoursereports');
-}
 if (!has_capability('moodle/site:config', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
 }
 
 // Prepare the page information. 
 $page_path = '/report/usercoursereports/index.php';
-$url_param = ['type' => $type];
+if ($type) {
+    $url_param['type'] = $type;
+}
 if ($id) {
     $url_param['id'] = $id;
+}
+if ($category_id) {
+    $url_param['category_id'] = $category_id;
+}
+if ($page) {
+    $url_param['page'] = $page;
+}
+if ($per_page) {
+    $url_param['per_page'] = $per_page;
 }
 if ($search) {
     $params['search'] = $search;
 }
-$url = new moodle_url($page_path, $url_param);
+$page_url = new moodle_url($page_path, $url_param);
 $redirect_url = new moodle_url($page_path, ['type' => $type]);
-$page_title = UtilReport_handler::get_report_page_title($type);
+$page_title = 'usercoursereports-' . $type;
 
-// setup page information
+// setup page information.
 $PAGE->set_context($context);
 $PAGE->set_url($page_url);
 $PAGE->set_pagelayout('admin');
@@ -77,69 +82,20 @@ $PAGE->requires->jquery();
 
 /**
  * ========================================================
- *     Access checks.
- * ========================================================
- */
-require_login(null, false);
-
-/**
- * ========================================================
  *     Get the data and display
  * ========================================================
  */
 $contents = '';
-if (!has_capability('moodle/site:config', $context)) {
-    $contents .= "You don't have permission to access this pages";
-    $contents .= "<br>";
-    $contents .= "<a href='/'> Return Back</a>";
+$contents .= ReportTable::get_report_list($page_path);
+
+if ($type == 'course') {
+    $contents .= ReportTable::get_course_info_table($page_url, $per_page, $page, $search, $category_id);
+} elseif ($type == 'user') {
+    $contents .= ReportTable::get_user_info_table($page_url, $per_page, $page, $search);
 } else {
-
-    $contents = UtilReport_handler::get_report_list();
-
-    if ($type == 'course') {
-        $all_course_info = CourseDataHandler::get_all_course_info(
-            $per_page_data,
-            $page_number,
-            $search,
-            $search_category_id
-        );
-        $pagination = $OUTPUT->paging_bar(
-            $all_course_info['meta']['total_record'],
-            $page_number,
-            $per_page_data,
-            $search_page_url
-        );
-        // 
-        $template_content = [
-            'course_info' => $all_course_info['data'],
-            'has_data' => ($all_course_info['meta']['page_data_count']) ? true : false,
-            'pagination' => $pagination,
-            'search_form' => UtilReport_handler::get_search_form_content($page_url, [['name' => 'type', 'value' => $type]]),
-        ];
-        $contents .= $OUTPUT->render_from_template('theme_skilllab/pages/report/course_report', $template_content);
-    } elseif ($type == 'user') {
-        $all_user_info = UserDataHandler::get_all_user_info(
-            $per_page_data,
-            $page_number,
-            $search,
-        );
-        $pagination = $OUTPUT->paging_bar(
-            $all_user_info['meta']['total_record'],
-            $page_number,
-            $per_page_data,
-            $search_page_url
-        );
-        $template_content = [
-            'user_info' => $all_user_info['data'],
-            'has_data' => ($all_user_info['meta']['page_data_count']) ? true : false,
-            'pagination' => $pagination,
-            'search_form' => UtilReport_handler::get_search_form_content($page_url, [['name' => 'type', 'value' => $type]]),
-        ];
-        $contents .= $OUTPUT->render_from_template('theme_skilllab/pages/report/user_report', $template_content);
-    } else {
-        $contents .= '<div> Please select the type.</div>';
-    }
+    $contents .= '<div> Please select the type.</div>';
 }
+
 
 
 
