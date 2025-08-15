@@ -41,7 +41,7 @@ defined('MOODLE_INTERNAL') || die;
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class UserDataHandler {
+class user_data_handler {
 
     /**
      * Returns List of courses where the user is enrolled
@@ -345,6 +345,7 @@ class UserDataHandler {
         // 
         $records = $DB->get_records_sql($sql_query, $sql_params, $limitfrom, $limitnum);
         $total_records = $DB->get_records_sql($sql_query, $sql_params);
+        // count_records_sql
 
         //create return value
         $page_data_count = $limitfrom;

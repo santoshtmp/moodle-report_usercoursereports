@@ -41,7 +41,7 @@ defined('MOODLE_INTERNAL') || die;
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class CourseDataHandler {
+class course_data_handler {
 
     /**
      * return course mod_customcert infomation
@@ -400,7 +400,7 @@ class CourseDataHandler {
                 if ($user_lastaccess_course) {
                     $count_active_users++;
                 }
-                $percentage = UserDataHandler::get_user_course_progress($course, $enrolled_user->id);
+                $percentage = user_data_handler::get_user_course_progress($course, $enrolled_user->id);
                 if ($percentage == 100) {
                     $count_course_completion++;
                 }
@@ -424,10 +424,10 @@ class CourseDataHandler {
             $courseinfo['course_newsitems'] = $course->newsitems;
             $courseinfo['course_format'] = $course->format;
             $courseinfo['course_visible'] = $course->visible;
-            $courseinfo['course_startdate'] = ($timestamp) ? $course->startdate : UserDataHandler::get_user_date_time($course->startdate);
-            $courseinfo['course_enddate'] = ($timestamp) ? $course->enddate : UserDataHandler::get_user_date_time($course->enddate);
-            $courseinfo['course_timecreated'] = ($timestamp) ? $course->timecreated : UserDataHandler::get_user_date_time($course->timecreated);
-            $courseinfo['course_timemodified'] = ($timestamp) ? $course->timemodified : UserDataHandler::get_user_date_time($course->timemodified);
+            $courseinfo['course_startdate'] = ($timestamp) ? $course->startdate : user_data_handler::get_user_date_time($course->startdate);
+            $courseinfo['course_enddate'] = ($timestamp) ? $course->enddate : user_data_handler::get_user_date_time($course->enddate);
+            $courseinfo['course_timecreated'] = ($timestamp) ? $course->timecreated : user_data_handler::get_user_date_time($course->timecreated);
+            $courseinfo['course_timemodified'] = ($timestamp) ? $course->timemodified : user_data_handler::get_user_date_time($course->timemodified);
             $courseinfo['enrollment_methods'] = $enrollment_methods;
             $courseinfo['enroll_total_student'] = count_enrolled_users($context, 'moodle/course:isincompletionreports');
             $courseinfo['count_active_users'] = $count_active_users;
@@ -450,7 +450,7 @@ class CourseDataHandler {
      * @param int $category_id 
      * @return array
      */
-    public static function get_all_course_info($per_page = 20, $page_number = 1, $search_course = '', $category_id = 0) {
+    public static function get_all_course_info($per_page = 20, $page_number = 1, $search_course = '', $category_ids = []) {
         global $DB;
         $all_courses_info = [];
         // 
@@ -476,10 +476,10 @@ class CourseDataHandler {
             $sql_params['course_id'] = $course_id;
             $where_condition[] = 'course.id = :course_id';
         }
-        if ($category_id) {
-            $sql_params['category_id'] = $category_id;
-            $where_condition[] = 'course.category = :category_id';
-        }
+        // if ($category_id) {
+        //     $sql_params['category_id'] = $category_id;
+        //     $where_condition[] = 'course.category = :category_id';
+        // }
         if (count($where_condition) > 0) {
             $where_condition_apply .= " AND " . implode(" AND ", $where_condition);
         }
@@ -493,7 +493,7 @@ class CourseDataHandler {
         $page_data_count = $limitfrom;
         foreach ($records as $record) {
             $page_data_count++;
-            $record_info = CourseDataHandler::get_course_info($record->id, true, false);
+            $record_info = self::get_course_info($record->id, true, false);
             $record_info['sn'] = $page_data_count;
             $all_courses_info['data'][] = $record_info;
         }

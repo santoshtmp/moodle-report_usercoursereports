@@ -22,7 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use report_usercoursereports\ReportTable;
+use report_usercoursereports\form\filter_form;
+use report_usercoursereports\report_content;
 
 // Get require config file.
 require_once(dirname(__FILE__) . '/../../config.php');
@@ -34,7 +35,8 @@ $type = optional_param('type', '', PARAM_TEXT);
 $search = optional_param('search', '', PARAM_TEXT);
 $page = optional_param('page', 0, PARAM_INT);
 $per_page = optional_param('per_page', 50, PARAM_INT);
-$category_id = optional_param('category_id', 0, PARAM_INT);
+$courseids = optional_param_array('ids', 0, PARAM_INT);
+$categoryids = optional_param_array('categoryids', 0, PARAM_INT);
 $download = optional_param('download', 0, PARAM_INT);
 $context = \context_system::instance();
 
@@ -43,6 +45,7 @@ require_login(null, false);
 if (!has_capability('moodle/site:config', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
 }
+// require_capability('report/usercoursereports:view', $context);
 
 // Prepare the page information. 
 $page_path = '/report/usercoursereports/index.php';
@@ -71,7 +74,7 @@ $page_title = 'usercoursereports-' . $type;
 // setup page information.
 $PAGE->set_context($context);
 $PAGE->set_url($page_url);
-$PAGE->set_pagelayout('admin');
+$PAGE->set_pagelayout('report');
 $PAGE->set_pagetype('report_usercoursereports');
 $PAGE->set_subpage((string)$type);
 $PAGE->set_title($page_title);
@@ -79,31 +82,28 @@ $PAGE->set_heading($page_title);
 $PAGE->add_body_class('report-usercoursereports');
 $PAGE->navbar->add($page_title, $page_url);
 $PAGE->requires->jquery();
+// 
+$filter_form = new filter_form($page_url, [
+    'type' => $type,
+    'search' => $search,
+    'courseids' => $courseids,
+    'categoryids' => $categoryids,
+    'courseformat' => $courseformat,
 
-/**
- * ========================================================
- *     Get the data and display
- * ========================================================
- */
+]);
+//  Get the data and display.
 $contents = '';
-$contents .= ReportTable::get_report_list($page_path);
-
+$contents .= report_content::get_report_list($page_path);
+$contents .= $filter_form->render();
 if ($type == 'course') {
-    $contents .= ReportTable::get_course_info_table($page_url, $per_page, $page, $search, $category_id);
+    $contents .= report_content::get_course_info_table($page_url, $per_page, $page, $search, $categoryids);
 } elseif ($type == 'user') {
-    $contents .= ReportTable::get_user_info_table($page_url, $per_page, $page, $search);
+    $contents .= report_content::get_user_info_table($page_url, $per_page, $page, $search);
 } else {
     $contents .= '<div> Please select the type.</div>';
 }
 
-
-
-
-/**
- * ========================================================
- * -------------------  Output Content  -------------------
- * ========================================================
- */
+// Output Content.
 echo $OUTPUT->header();
 echo $contents;
 echo $OUTPUT->footer();

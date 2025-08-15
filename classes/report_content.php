@@ -23,10 +23,8 @@
 
 namespace report_usercoursereports;
 
-use action_menu;
 use html_writer;
 use moodle_url;
-use pix_icon;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die;
@@ -39,17 +37,17 @@ defined('MOODLE_INTERNAL') || die;
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class ReportTable {
+class report_content {
 
     /**
-     * 
+     * Get Report List 
      */
     public static function get_report_list($page_path) {
         $type = optional_param('type', '', PARAM_TEXT);
         $contents = '';
         $contents .= html_writer::start_tag(
             'div',
-            ['class' => 'report-usercoursereports-list mb-3']
+            ['class' => 'report-usercoursereports-list mt-3 mb-3']
         );
         $contents .= html_writer::start_tag(
             'div',
@@ -57,12 +55,12 @@ class ReportTable {
         );
         $contents .= html_writer::link(
             new moodle_url($page_path, ['type' => 'course']),
-            get_string('course'),
+            get_string('coursereports', 'report_usercoursereports'),
             ['class' => ($type == 'course') ? 'active btn btn-primary' : 'btn btn-secondary']
         );
         $contents .= html_writer::link(
             new moodle_url($page_path, ['type' => 'user']),
-            get_string('user'),
+            get_string('usereports', 'report_usercoursereports'),
             ['class' => ($type == 'user') ? 'active btn btn-primary' : 'btn btn-secondary']
         );
         $contents .= html_writer::end_tag('div');
@@ -77,30 +75,31 @@ class ReportTable {
      * @param string $page_path
      * @return string
      */
-    public static function get_course_info_table($page_url, $per_page, $page, $search, $category_id) {
-        global $PAGE, $OUTPUT;
+    public static function get_course_info_table($page_url, $per_page, $page, $search, $category_ids) {
+        global $PAGE, $OUTPUT, $DB;
 
-        $all_course_info = CourseDataHandler::get_all_course_info($per_page, $page, $search, $category_id);
+        $all_course_info = course_data_handler::get_all_course_info($per_page, $page, $search, $category_ids);
         $tring_data = new stdClass();
         $tring_data->data_from = $all_course_info['meta']['data_from'];
         $tring_data->data_to = $all_course_info['meta']['data_to'];
         $tring_data->data_total = $all_course_info['meta']['total_record'];
         // 
         $contents = '';
+        // Display the form.
+
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $tring_data));
         $contents .= html_writer::start_tag('table', ['id' => 'course-report-table', 'class' => 'generaltable generalbox']);
         $contents .= html_writer::start_tag('thead');
         $contents .= html_writer::tag(
             'tr',
-            html_writer::tag('th', 'S.N') .
-                html_writer::tag('th', 'Name') .
-                html_writer::tag('th', 'Category') .
-                html_writer::tag('th', 'Enrol Student') .
-                html_writer::tag('th', 'Active Student') .
-                html_writer::tag('th', 'Course Format') .
-                html_writer::tag('th', 'Course visibility') .
-                html_writer::tag('th', 'Enrollment Option') .
-                html_writer::tag('th', 'Created Date')
+            html_writer::tag('th', get_string('sn', 'report_usercoursereports')) .
+                html_writer::tag('th', get_string('fullname')) .
+                html_writer::tag('th', get_string('category')) .
+                html_writer::tag('th', get_string('participants')) .
+                html_writer::tag('th', get_string('courseformat', 'report_usercoursereports')) .
+                html_writer::tag('th', get_string('coursevisibility', 'report_usercoursereports')) .
+                html_writer::tag('th', get_string('enrolmentmethods', 'report_usercoursereports')) .
+                html_writer::tag('th', get_string('createddate', 'report_usercoursereports'))
         );
         $contents .= html_writer::end_tag('thead');
 
@@ -139,10 +138,15 @@ class ReportTable {
                 )
             );
             $contents .= html_writer::tag('td', $course['enroll_total_student']);
-            $contents .= html_writer::tag('td', $course['count_active_users']);
             $contents .= html_writer::tag('td', get_string('pluginname', 'format_' . $course['course_format']));
             $contents .= html_writer::tag('td', $course['course_visible'] ? get_string('show') : get_string('hide'));
-            $contents .= html_writer::tag('td', implode('<br> ', array_column($course['enrollment_methods'], 'name')));
+            $contents .= html_writer::tag(
+                'td',
+                html_writer::alist(
+                    array_column($course['enrollment_methods'], 'name'),
+                    ['style' => 'list-style: none; padding-left: 0; margin: 0;'],
+                )
+            );
             $contents .= html_writer::tag('td', $course['course_timecreated']);
             $contents .= html_writer::end_tag('tr');
         }
@@ -166,7 +170,7 @@ class ReportTable {
     public static function get_user_info_table($page_url, $per_page, $page, $search) {
         global $PAGE, $OUTPUT;
         // 
-        $all_user_info = UserDataHandler::get_all_user_info($per_page, $page, $search);
+        $all_user_info = user_data_handler::get_all_user_info($per_page, $page, $search);
         $tring_data = new stdClass();
         $tring_data->data_from = $all_user_info['meta']['data_from'];
         $tring_data->data_to = $all_user_info['meta']['data_to'];
@@ -178,12 +182,12 @@ class ReportTable {
         $contents .= html_writer::start_tag('thead');
         $contents .= html_writer::tag(
             'tr',
-            html_writer::tag('th', 'S.N') .
-                html_writer::tag('th', 'Full Name') .
-                html_writer::tag('th', 'Email') .
-                html_writer::tag('th', 'Roles') .
-                html_writer::tag('th', 'Enrolled Course') .
-                html_writer::tag('th', 'Last access')
+            html_writer::tag('th', get_string('sn', 'report_usercoursereports')) .
+                html_writer::tag('th', get_string('fullname')) .
+                html_writer::tag('th', get_string('email')) .
+                html_writer::tag('th', get_string('roles')) .
+                html_writer::tag('th', get_string('courses')) .
+                html_writer::tag('th', get_string('lastaccess', 'report_usercoursereports'))
         );
         $contents .= html_writer::end_tag('thead');
 
@@ -219,7 +223,13 @@ class ReportTable {
                 ['class' => 'd-flex']
             );
             $contents .= html_writer::tag('td', $user['email']);
-            $contents .= html_writer::tag('td', implode('<br>', array_column($user['roles'], 'name')));
+            $contents .= html_writer::tag(
+                'td',
+                html_writer::alist(
+                    array_column($user['roles'], 'name'),
+                    ['style' => 'list-style: none; padding-left: 0; margin: 0;'],
+                )
+            );
             $contents .= html_writer::tag('td', count($user['enrolled_courses']));
             $contents .= html_writer::tag('td', $user['lastaccess']);
             $contents .= html_writer::end_tag('tr');
