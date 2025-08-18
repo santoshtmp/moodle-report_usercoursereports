@@ -41,11 +41,16 @@ $string['enrolmentmethods'] = 'Enrolment methods';
 $string['createddate'] = 'Created Date';
 $string['courses'] = 'Courses';
 $string['lastaccess'] = 'Last access';
+$string['citycountry'] = 'City Country';
 $string['sn'] = 'S.N';
 $string['selectcourses'] = 'Select courses';
 $string['allcourses'] = 'All courses';
+$string['allcountries'] = 'All countries';
 $string['applyfilter'] = 'Apply filter';
 $string['coursefilter'] = 'Course filter';
 $string['userfilter'] = 'User filter';
 $string['filter'] = 'Filter';
+$string['coursecreatedfrom'] = 'Course created from';
+$string['coursecreatedto'] = 'Course created to';
+$string['invaliddaterange'] = 'Invalied date range.';
 

@@ -70,15 +70,15 @@ class user_data_handler {
                         "currency" => "",
                         "course_user_roles" => "",
                     ];
-                    // 
+
                     $enrolinstances = enrol_get_instances((int)$mycourse->id, true);
                     foreach ($enrolinstances as $key => $courseenrolinstance) {
-                        // if ($courseenrolinstance->enrol == 'fee' && $courseenrolinstance->roleid == '5') {
                         if ($courseenrolinstance->enrol == 'fee') {
                             $enrolledcourse['cost'] = $courseenrolinstance->cost;
                             $enrolledcourse['currency'] = $courseenrolinstance->currency;
                         }
                     }
+
                     $course_user_roles = [];
                     $roles = get_user_roles($coursecontext, $user->id);
                     if ($roles && is_array($roles)) {
@@ -96,7 +96,6 @@ class user_data_handler {
             }
         }
         return $enrolledcourses;
-        // 
     }
 
     /**
@@ -162,8 +161,7 @@ class user_data_handler {
     public static function get_user_profile_image_url($user) {
         global $PAGE;
         $userpicture = new \user_picture($user);
-        $userpicture->size = 1; // Size f1.
-        // $userpicture->size = 0; // Size f2. profileimageurlsmall
+        $userpicture->size = 1;
         $profileimageurl = $userpicture->get_url($PAGE)->out(false);
         return $profileimageurl;
     }
@@ -376,26 +374,35 @@ class user_data_handler {
         global $DB;
         $roles_data = [];
 
-        if (!$user_id) {
-            return $roles_data;
-        }
-
-        $sql = "SELECT r.*
+        if ($user_id) {
+            $sql = "SELECT r.*
             FROM {role_assignments} ra
             JOIN {role} r ON ra.roleid = r.id
             WHERE ra.userid = ?";
 
-        $params = [$user_id];
-        $roles = $DB->get_records_sql($sql, $params);
-        foreach ($roles as $key => $role) {
-            $roles_data[] = [
-                'id' => $role->id,
-                'shortname' => $role->shortname,
-                'name' => $role->name ?: role_get_name($role)
-            ];
+            $params = [$user_id];
+            $roles = $DB->get_records_sql($sql, $params);
+            foreach ($roles as $key => $role) {
+                $roles_data[] = [
+                    'id' => $role->id,
+                    'shortname' => $role->shortname,
+                    'name' => $role->name ?: role_get_name($role)
+                ];
+            }
+            if (is_siteadmin($user_id)) {
+                $roles_data[] = ['id' => '-1', 'shortname' => 'admin', 'name' => get_string('admin')];
+            }
+            return $roles_data;
         }
-        if (is_siteadmin($user_id)) {
-            $roles_data[] = ['id' => '-1', 'shortname' => 'admin', 'name' => get_string('admin')];
+        // Get all roles.
+        $roles_data = [
+            '0' => get_string('everyone'),
+            '-1' => get_string('admin')
+        ];
+
+        $allrole = $DB->get_records('role');
+        foreach ($allrole as $key => $role) {
+            $roles_data[$role->id] = role_get_name($role);
         }
         return $roles_data;
     }

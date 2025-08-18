@@ -185,6 +185,7 @@ class report_content {
             html_writer::tag('th', get_string('sn', 'report_usercoursereports')) .
                 html_writer::tag('th', get_string('fullname')) .
                 html_writer::tag('th', get_string('email')) .
+                html_writer::tag('th', get_string('location')) .
                 html_writer::tag('th', get_string('roles')) .
                 html_writer::tag('th', get_string('courses')) .
                 html_writer::tag('th', get_string('lastaccess', 'report_usercoursereports'))
@@ -223,6 +224,13 @@ class report_content {
                 ['class' => 'd-flex']
             );
             $contents .= html_writer::tag('td', $user['email']);
+            $contents .= html_writer::tag(
+                'td',
+
+                (($user['address']) ?  html_writer::tag('div', get_string('address') . ': ' . $user['address']) : '') .
+                    (($user['city']) ? html_writer::tag('div', get_string('city') . ': ' . $user['city']) : '') .
+                    (($user['country_name']) ? html_writer::tag('div', get_string('country') . ': ' . $user['country_name']) : '')
+            );
             $contents .= html_writer::tag(
                 'td',
                 html_writer::alist(

@@ -34,7 +34,7 @@ $id = optional_param('id', 0, PARAM_INT);
 $type = optional_param('type', '', PARAM_TEXT);
 $search = optional_param('search', '', PARAM_TEXT);
 $page = optional_param('page', 0, PARAM_INT);
-$per_page = optional_param('per_page', 50, PARAM_INT);
+$perpage = optional_param('per_page', 50, PARAM_INT);
 $courseids = optional_param_array('ids', 0, PARAM_INT);
 $categoryids = optional_param_array('categoryids', 0, PARAM_INT);
 $download = optional_param('download', 0, PARAM_INT);
@@ -48,42 +48,42 @@ if (!has_capability('moodle/site:config', $context)) {
 // require_capability('report/usercoursereports:view', $context);
 
 // Prepare the page information. 
-$page_path = '/report/usercoursereports/index.php';
+$pagepath = '/report/usercoursereports/index.php';
 if ($type) {
-    $url_param['type'] = $type;
+    $urlparam['type'] = $type;
 }
 if ($id) {
-    $url_param['id'] = $id;
+    $urlparam['id'] = $id;
 }
-if ($category_id) {
-    $url_param['category_id'] = $category_id;
+if ($categoryid) {
+    $urlparam['category_id'] = $categoryid;
 }
 if ($page) {
-    $url_param['page'] = $page;
+    $urlparam['page'] = $page;
 }
-if ($per_page) {
-    $url_param['per_page'] = $per_page;
+if ($perpage) {
+    $urlparam['per_page'] = $perpage;
 }
 if ($search) {
     $params['search'] = $search;
 }
-$page_url = new moodle_url($page_path, $url_param);
-$redirect_url = new moodle_url($page_path, ['type' => $type]);
+$pageurl = new moodle_url($pagepath, $urlparam);
+$redirecturl = new moodle_url($pagepath, ['type' => $type]);
 $page_title = 'usercoursereports-' . $type;
 
 // setup page information.
 $PAGE->set_context($context);
-$PAGE->set_url($page_url);
+$PAGE->set_url($pageurl);
 $PAGE->set_pagelayout('report');
 $PAGE->set_pagetype('report_usercoursereports');
 $PAGE->set_subpage((string)$type);
 $PAGE->set_title($page_title);
 $PAGE->set_heading($page_title);
 $PAGE->add_body_class('report-usercoursereports');
-$PAGE->navbar->add($page_title, $page_url);
+$PAGE->navbar->add($page_title, $pageurl);
 $PAGE->requires->jquery();
 // 
-$filter_form = new filter_form($page_url, [
+$filter_form = new filter_form($pageurl, [
     'type' => $type,
     'search' => $search,
     'courseids' => $courseids,
@@ -91,14 +91,17 @@ $filter_form = new filter_form($page_url, [
     'courseformat' => $courseformat,
 
 ]);
+if ($filter_form->is_cancelled()) {
+    redirect($redirecturl);
+}
 //  Get the data and display.
 $contents = '';
-$contents .= report_content::get_report_list($page_path);
+$contents .= report_content::get_report_list($pagepath);
 $contents .= $filter_form->render();
 if ($type == 'course') {
-    $contents .= report_content::get_course_info_table($page_url, $per_page, $page, $search, $categoryids);
+    $contents .= report_content::get_course_info_table($pageurl, $perpage, $page, $search, $categoryids);
 } elseif ($type == 'user') {
-    $contents .= report_content::get_user_info_table($page_url, $per_page, $page, $search);
+    $contents .= report_content::get_user_info_table($pageurl, $perpage, $page, $search);
 } else {
     $contents .= '<div> Please select the type.</div>';
 }

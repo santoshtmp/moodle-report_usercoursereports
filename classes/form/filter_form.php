@@ -23,6 +23,7 @@
 
 namespace report_usercoursereports\form;
 
+use html_writer;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die;
@@ -41,7 +42,7 @@ class filter_form extends \moodleform {
      * Form definition.
      */
     public function definition() {
-        global $DB, $PAGE;
+        global  $PAGE;
 
         $mform = $this->_form;
         $type = $this->_customdata['type'];
@@ -51,21 +52,32 @@ class filter_form extends \moodleform {
         $courseformat = $this->_customdata['courseformat'];
         $filterfieldwrapper_expanded = false;
 
-        // header
+        // Load AMD module.
+        $PAGE->requires->js_call_amd('report_usercoursereports/usercoursereports', 'init');
+
+        // Set form ID and classes, add usercoursereports-type attribute
+        $mform->updateAttributes([
+            'id' => ($type) ? $type . '-usercoursereports-filter' : 'usercoursereports-filter',
+            'class' => 'mform report-usercoursereports-filter pt-3 pb-3',
+            'data-usercoursereports-type' => $type
+        ]);
+
+        // ... header
         $mform->addElement('header', 'filterfieldwrapper', get_string($type . 'filter', 'report_usercoursereports'));
         if ($type == 'course' && ($search || $categoryids || $courseformat)) {
             $filterfieldwrapper_expanded = true;
         }
         $mform->setExpanded('filterfieldwrapper', $filterfieldwrapper_expanded);
+        $mform->addElement('html', '<div class="filter-grid">');
 
-        // search text.
-        $mform->addElement('text', 'search', get_string('search'), ['size' => 50]);
+        // ... search text.
+        $mform->addElement('text', 'search', get_string('search'), ['size' => 50, 'class' => 'usercoursereports-filter-field']);
         $mform->setType('search', PARAM_TEXT);
         $mform->setDefault('search', $search);
 
 
         if ($type == 'user') {
-            // course id search
+            // ... course id search.
             $mform->addElement(
                 'course',
                 'courseids',
@@ -73,54 +85,101 @@ class filter_form extends \moodleform {
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allcourses', 'report_usercoursereports'),
+                    'class' => 'usercoursereports-filter-field'
                 ]
             );
             $mform->setType('courseids', PARAM_INT);
-            $mform->setDefault('courseids', 0);
-        }
-        // Category id search.
-        $mform->addElement(
-            'autocomplete',
-            'categoryids',
-            get_string('categories'),
-            \core_course_category::make_categories_list(),
-            [
-                'multiple' => true,
-                'noselectionstring' => get_string('allcategories'),
-            ]
-        );
-        $mform->setType('categoryids', PARAM_INT);
-        $mform->setDefault('categoryids', 0);
+            $mform->setDefault('courseids', $courseids);
 
-        // Course format dropdown.
+            // User role search..
+            $mform->addElement(
+                'autocomplete',
+                'roleids',
+                get_string('roles'),
+                \report_usercoursereports\user_data_handler::get_all_roles(),
+                [
+                    'multiple' => true,
+                    'noselectionstring' => get_string('allroles'),
+                    'class' => 'usercoursereports-filter-field'
+                ]
+            );
+            $mform->setType('categoryids', PARAM_INT);
+            $mform->setDefault('categoryids', $categoryids);
+
+            // Country filter.
+            $countries = get_string_manager()->get_list_of_countries();
+            $countryoptions = ['' => get_string('allcountries', 'report_usercoursereports')] + $countries;
+            $mform->addElement('select', 'country', get_string('country'), $countryoptions, ['class' => 'usercoursereports-filter-field']);
+            $mform->setType('country', PARAM_TEXT);
+            $mform->setDefault('country', '');
+        }
+
+
         if ($type == 'course') {
+            // Course category id search.
+            $mform->addElement(
+                'autocomplete',
+                'categoryids',
+                get_string('categories'),
+                \core_course_category::make_categories_list(),
+                [
+                    'multiple' => true,
+                    'noselectionstring' => get_string('allcategories'),
+                    'class' => 'usercoursereports-filter-field'
+                ]
+            );
+            $mform->setType('categoryids', PARAM_INT);
+            $mform->setDefault('categoryids', $categoryids);
+
+            // Course format dropdown.
             $formats = \core_component::get_plugin_list('format');
             $formatoptions = ['' => get_string('all')];
             foreach ($formats as $formatname => $formatpath) {
                 $formatoptions[$formatname] = get_string('pluginname', "format_{$formatname}");
             }
-            $mform->addElement('select', 'courseformat', get_string('courseformat', 'report_usercoursereports'), $formatoptions);
+            $mform->addElement('select', 'courseformat', get_string('courseformat', 'report_usercoursereports'), $formatoptions, ['class' => 'usercoursereports-filter-field']);
             $mform->setType('courseformat', PARAM_ALPHANUMEXT);
             $mform->setDefault('courseformat', '');
-        }
 
-        // id
+            // Course visibility dropdown.
+            $visibilityoptions = [
+                ''  => get_string('all'),
+                '1' => get_string('show'),
+                '0' => get_string('hide'),
+            ];
+            $mform->addElement('select', 'coursevisibility', get_string('coursevisibility', 'report_usercoursereports'), $visibilityoptions, ['class' => 'usercoursereports-filter-field']);
+            $mform->setType('coursevisibility', PARAM_INT);
+            $mform->setDefault('coursevisibility', '');
+
+            // Created from date.
+            $mform->addElement('date_selector', 'createdfrom', get_string('coursecreatedfrom', 'report_usercoursereports'), [
+                'optional' => true,
+            ]);
+            $mform->setType('createdfrom', PARAM_INT);
+            $mform->getElement('createdfrom')->setAttributes(['class' => 'usercoursereports-filter-field']);
+
+
+            // Created to date.
+            $mform->addElement('date_selector', 'createdto', get_string('coursecreatedto', 'report_usercoursereports'), [
+                'optional' => true,
+            ]);
+            $mform->setType('createdto', PARAM_INT);
+            $mform->getElement('createdto')->setAttributes(['class' => 'usercoursereports-filter-field']);
+        }
+        // Close two-column grid
+        $mform->addElement('html', '</div>');
+
+        // ... id
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
         $mform->setDefault('id', 0);
 
-        // Set form ID correctly
-        $mform->updateAttributes([
-            'id' => ($type) ? $type . '-usercoursereports-filter' : 'usercoursereports-filter',
-            'class' => 'mform report-usercoursereports-filter pt-3 pb-3'
-        ]);
-        // //
-        // $buttonarray = [];
-        // $buttonarray[] = $mform->createElement('button', 'filterbutton', get_string('applyfilter', 'report_usercoursereports'));
-        // $buttonarray[] = $mform->createElement('button', 'clearbutton', get_string('clear'));
-        // $mform->addGroup($buttonarray, 'filterbuttons', '', array(' '), false);
-
-        $this->add_action_buttons();
+        // Action btn.
+        $buttonarray = [];
+        $buttonarray[] = &$mform->createElement('submit', 'filterbutton', get_string('applyfilter', 'report_usercoursereports'), ['class' => 'apply-filter form-submit']);
+        $buttonarray[] = &$mform->createElement('cancel', 'clearbutton', get_string('clear'));
+        $mform->addGroup($buttonarray, 'buttonar', '', array(''), false);
+        $mform->getElement('buttonar')->setAttributes(['class' => 'filter-buttons mt-4 mb-4']);
     }
 
     /**
@@ -134,6 +193,13 @@ class filter_form extends \moodleform {
         global $CFG, $DB;
 
         $errors = parent::validation($data, $files);
+
+        // Ensure "from" date is not greater than "to" date.
+        if (!empty($data['createdfrom']) && !empty($data['createdto'])) {
+            if ($data['createdfrom'] > $data['createdto']) {
+                $errors['createdto'] = get_string('invaliddaterange', 'report_usercoursereports');
+            }
+        }
 
         return $errors;
     }

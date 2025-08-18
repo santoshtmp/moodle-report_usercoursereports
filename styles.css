@@ -3,7 +3,6 @@
     width: 50px;
     height: 50px;
     object-fit: cover;
-    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); */
 }
 
 #page-report_usercoursereports .course-link {
@@ -17,6 +16,54 @@
     text-decoration: underline;
 }
 
-#page-report_usercoursereports table td{
+#page-report_usercoursereports table td {
     max-width: 400px;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 450px) 1fr;
+    gap: 20px;
+    margin: 0 auto;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field {
+    display: block;
+    margin-bottom: 0;
+    padding-left: 3rem;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .col-form-label {
+    padding-left: 15px;
+    font-weight: 600;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .felement {
+    width: 100%;
+    padding-left: 15px;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .form-autocomplete-selection:not(:has([role="option"])) {
+    display: none;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .form-autocomplete-selection:has([role="option"]) {
+    display: block;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-buttons {
+    padding-left: 3rem;
+}
+
+
+@media (max-width: 767px) {
+    #page-report_usercoursereports .report-usercoursereports-filter .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 0 1rem;
+    }
+
+    #page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field {
+        padding-left: 0;
+    }
 }
