@@ -280,20 +280,21 @@ class user_data_handler {
 
 
     /**
-     * @param int $per_page 
-     * @param int $page_number 
+     * @param int $perpage 
+     * @param int $pagenumber 
      * @param string $search_user 
      * @return array
      */
-    public static function get_all_user_info($per_page = 20, $page_number = 1, $search_user = '', $user_id = '', $role_id = '', $course_id = '') {
+    public static function get_all_user_info($perpage = 20, $pagenumber = 1, $search_user = '', $user_id = '', $role_id = '', $course_id = '') {
 
         global $DB;
-        $all_user_info = [];
+        $alluserinfo = [];
         // 
         $limitfrom = 0;
-        $limitnum = ($per_page > 0) ? $per_page : 0;
-        if ($page_number > 0) {
-            $limitfrom = $limitnum * $page_number;
+        $perpage = ($perpage) ?: 20;
+        $limitnum = ($perpage > 0) ? $perpage : 0;
+        if ($pagenumber > 0) {
+            $limitfrom = $limitnum * $pagenumber;
         }
         // 
         $query_join_apply = '';
@@ -339,7 +340,6 @@ class user_data_handler {
         }
         // 
         $sql_query = 'SELECT DISTINCT u.id FROM {user} AS u' . $query_join_apply . $where_condition_apply . ' ORDER BY u.id DESC ';
-        // var_dump($sql_query); die;
         // 
         $records = $DB->get_records_sql($sql_query, $sql_params, $limitfrom, $limitnum);
         $total_records = $DB->get_records_sql($sql_query, $sql_params);
@@ -351,20 +351,20 @@ class user_data_handler {
             $page_data_count++;
             $record_info = self::get_user_info($record->id, false);
             $record_info['sn'] = $page_data_count;
-            $all_user_info['data'][] = $record_info;
+            $alluserinfo['data'][] = $record_info;
         }
         // meta information
-        $all_user_info['meta'] = [
+        $alluserinfo['meta'] = [
             'total_record' => count($total_records),
-            'total_page' => ceil(count($total_records) / $per_page),
-            'current_page' => $page_number,
-            'per_page' => $per_page,
+            'total_page' => ceil(count($total_records) / $perpage),
+            'pagenumber' => $pagenumber,
+            'perpage' => $perpage,
             'page_data_count' => $page_data_count,
             'data_from' => $limitfrom + 1,
             'data_to' => $page_data_count,
         ];
         // return data
-        return $all_user_info;
+        return $alluserinfo;
     }
 
     /**
@@ -406,5 +406,5 @@ class user_data_handler {
         }
         return $roles_data;
     }
-    // 
+    // END.
 }

@@ -53,4 +53,5 @@ $string['filter'] = 'Filter';
 $string['coursecreatedfrom'] = 'Course created from';
 $string['coursecreatedto'] = 'Course created to';
 $string['invaliddaterange'] = 'Invalied date range.';
+$string['invalidtypeparam'] = 'Invalied report type param.';
 

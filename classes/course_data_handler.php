@@ -444,20 +444,21 @@ class course_data_handler {
     }
 
     /**
-     * @param int $per_page 
-     * @param int $page_number 
-     * @param string $search_course 
-     * @param int $category_id 
+     * @param int $perpage 
+     * @param int $pagenumber 
+     * @param string $searchcourse 
+     * @param int $categoryids
      * @return array
      */
-    public static function get_all_course_info($per_page = 20, $page_number = 1, $search_course = '', $category_ids = []) {
+    public static function get_all_course_info($perpage = 20, $pagenumber = 1, $searchcourse = '', $categoryids = []) {
         global $DB;
         $all_courses_info = [];
         // 
         $limitfrom = 0;
-        $limitnum = ($per_page > 0) ? $per_page : 0;
-        if ($page_number > 0) {
-            $limitfrom = $limitnum * $page_number;
+        $perpage = ($perpage) ?: 20;
+        $limitnum = ($perpage > 0) ? $perpage : 0;
+        if ($pagenumber > 0) {
+            $limitfrom = $limitnum * $pagenumber;
         }
         // 
         $course_id = '';
@@ -467,22 +468,32 @@ class course_data_handler {
         ];
         $where_condition = [];
         $where_condition_apply = "WHERE course.id <> :frontpagecourse_id AND course.visible = :visible_val ";
-        if ($search_course) {
-            $sql_params['search_fullname'] = "%" . $search_course . "%";
-            $sql_params['search_shortname'] = "%" . $search_course . "%";
+        if ($searchcourse) {
+            $sql_params['search_fullname'] = "%" . $searchcourse . "%";
+            $sql_params['search_shortname'] = "%" . $searchcourse . "%";
             $where_condition[] = '( course.fullname LIKE :search_fullname || course.shortname LIKE :search_shortname )';
         }
         if ($course_id) {
             $sql_params['course_id'] = $course_id;
             $where_condition[] = 'course.id = :course_id';
         }
-        // if ($category_id) {
-        //     $sql_params['category_id'] = $category_id;
-        //     $where_condition[] = 'course.category = :category_id';
+        if (is_array($categoryids) && count($categoryids) > 0) {
+            $categoryids = implode(',', $categoryids);
+            $sql_params['categoryids'] = $categoryids;
+            $where_condition[] = 'course.category IN (:categoryids)';
+        }
+        // if ($timecreated_timestamp_from) {
+        //     $sql_query = $sql_query . 'AND course.timecreated >= ' . $timecreated_timestamp_from . ' ';
         // }
+        // if ($timecreated_timestamp_to) {
+        //     $timecreated_timestamp_to = $timecreated_timestamp_to + 24 * 3600;
+        //     $sql_query = $sql_query . 'AND course.timecreated <= ' . $timecreated_timestamp_to . ' ';
+        // }
+        // 
         if (count($where_condition) > 0) {
             $where_condition_apply .= " AND " . implode(" AND ", $where_condition);
         }
+
         // 
         $sql_query = 'SELECT * FROM {course} course ' . $where_condition_apply . ' ORDER BY course.id DESC ';
         // 
@@ -500,9 +511,9 @@ class course_data_handler {
         // meta information
         $all_courses_info['meta'] = [
             'total_record' => count($total_records),
-            'total_page' => ceil(count($total_records) / $per_page),
-            'current_page' => $page_number,
-            'per_page' => $per_page,
+            'total_page' => ceil(count($total_records) / $perpage),
+            'pagenumber' => $pagenumber,
+            'perpage' => $perpage,
             'page_data_count' => $page_data_count,
             'data_from' => $limitfrom + 1,
             'data_to' => $page_data_count,

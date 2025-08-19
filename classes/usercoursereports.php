@@ -37,13 +37,29 @@ defined('MOODLE_INTERNAL') || die;
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class report_content {
+class usercoursereports {
+
+    /**
+     * Set parameters
+     */
+    public static function urlparam($parameters) {
+        $urlparam = [];
+        foreach ($parameters as $key => $value) {
+            if ($value !== '' && $value !== 0 && $value !== null & !is_array($value)) {
+                $urlparams[$key] = $value;
+            } else if (is_array($value) && count($value)) {
+                foreach ($value as $index => $val) {
+                    $urlparam[$key . '[' . $index . ']'] = $val;
+                }
+            }
+        }
+        return $urlparam;
+    }
 
     /**
      * Get Report List 
      */
-    public static function get_report_list($page_path) {
-        $type = optional_param('type', '', PARAM_TEXT);
+    public static function get_report_list($type, $page_path) {
         $contents = '';
         $contents .= html_writer::start_tag(
             'div',
@@ -75,19 +91,19 @@ class report_content {
      * @param string $page_path
      * @return string
      */
-    public static function get_course_info_table($page_url, $per_page, $page, $search, $category_ids) {
-        global $PAGE, $OUTPUT, $DB;
-
-        $all_course_info = course_data_handler::get_all_course_info($per_page, $page, $search, $category_ids);
-        $tring_data = new stdClass();
-        $tring_data->data_from = $all_course_info['meta']['data_from'];
-        $tring_data->data_to = $all_course_info['meta']['data_to'];
-        $tring_data->data_total = $all_course_info['meta']['total_record'];
+    public static function get_course_info_table($pageurl, $urlparams) {
+        global $OUTPUT;
+        $perpage = ($urlparams['perpage']) ?: 20;
+        $allcourseinfo = course_data_handler::get_all_course_info($perpage, $urlparams['page'], $urlparams['search'], $urlparams['categoryids']);
+        $strdata = new stdClass();
+        $strdata->data_from = $allcourseinfo['meta']['data_from'];
+        $strdata->data_to = $allcourseinfo['meta']['data_to'];
+        $strdata->data_total = $allcourseinfo['meta']['total_record'];
         // 
         $contents = '';
         // Display the form.
-
-        $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $tring_data));
+        $contents .= html_writer::start_tag('div', ['class' => 'report-usercoursereports', 'usercoursereports-filter-type' => 'course']);
+        $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
         $contents .= html_writer::start_tag('table', ['id' => 'course-report-table', 'class' => 'generaltable generalbox']);
         $contents .= html_writer::start_tag('thead');
         $contents .= html_writer::tag(
@@ -105,7 +121,7 @@ class report_content {
 
         $contents .= html_writer::start_tag('tbody', ['data-type' => 'course-report']);
 
-        foreach ($all_course_info['data'] as $course) {
+        foreach ($allcourseinfo['data'] as $course) {
             // output item row
             $contents .= html_writer::start_tag(
                 'tr',
@@ -153,11 +169,12 @@ class report_content {
         $contents .= html_writer::end_tag('tbody');
         $contents .= html_writer::end_tag('table');
         $contents .= $OUTPUT->paging_bar(
-            $all_course_info['meta']['total_record'],
-            $page,
-            $per_page,
-            $page_url
+            $allcourseinfo['meta']['total_record'],
+            $allcourseinfo['meta']['pagenumber'],
+            $perpage,
+            $pageurl
         );
+        $contents .= html_writer::end_tag('div');
 
         return $contents;
     }
@@ -167,17 +184,18 @@ class report_content {
      * @param string $page_path
      * @return string
      */
-    public static function get_user_info_table($page_url, $per_page, $page, $search) {
-        global $PAGE, $OUTPUT;
+    public static function get_user_info_table($pageurl, $urlparams) {
+        global $OUTPUT;
         // 
-        $all_user_info = user_data_handler::get_all_user_info($per_page, $page, $search);
-        $tring_data = new stdClass();
-        $tring_data->data_from = $all_user_info['meta']['data_from'];
-        $tring_data->data_to = $all_user_info['meta']['data_to'];
-        $tring_data->data_total = $all_user_info['meta']['total_record'];
+        $perpage = ($urlparams['perpage']) ?: 20;
+        $alluserinfo = user_data_handler::get_all_user_info($perpage, $urlparams['page'], $urlparams['search']);
+        $strdata = new stdClass();
+        $strdata->data_from = $alluserinfo['meta']['data_from'];
+        $strdata->data_to = $alluserinfo['meta']['data_to'];
+        $strdata->data_total = $alluserinfo['meta']['total_record'];
         // 
         $contents = '';
-        $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $tring_data));
+        $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
         $contents .= html_writer::start_tag('table', ['id' => 'user-report-table', 'class' => 'generaltable generalbox']);
         $contents .= html_writer::start_tag('thead');
         $contents .= html_writer::tag(
@@ -194,7 +212,7 @@ class report_content {
 
         $contents .= html_writer::start_tag('tbody', ['data-type' => 'user-report']);
 
-        foreach ($all_user_info['data'] as $user) {
+        foreach ($alluserinfo['data'] as $user) {
             // output item row
             $contents .= html_writer::start_tag(
                 'tr',
@@ -245,10 +263,10 @@ class report_content {
         $contents .= html_writer::end_tag('tbody');
         $contents .= html_writer::end_tag('table');
         $contents .= $OUTPUT->paging_bar(
-            $all_user_info['meta']['total_record'],
-            $page,
-            $per_page,
-            $page_url
+            $alluserinfo['meta']['total_record'],
+            $alluserinfo['meta']['pagenumber'],
+            $perpage,
+            $pageurl
         );
 
         return $contents;

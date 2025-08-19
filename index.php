@@ -16,6 +16,8 @@
 
 /**
  *
+ * Main entry for User Course Reports.
+ *
  * @package    report_usercoursereports
  * @copyright  2024 https://santoshmagar.com.np/
  * @author     santoshtmp7
@@ -23,53 +25,46 @@
  */
 
 use report_usercoursereports\form\filter_form;
-use report_usercoursereports\report_content;
+use report_usercoursereports\usercoursereports;
 
 // Get require config file.
 require_once(dirname(__FILE__) . '/../../config.php');
 defined('MOODLE_INTERNAL') || die();
 
-// Get parameters.
-$id = optional_param('id', 0, PARAM_INT);
-$type = optional_param('type', '', PARAM_TEXT);
-$search = optional_param('search', '', PARAM_TEXT);
-$page = optional_param('page', 0, PARAM_INT);
-$perpage = optional_param('per_page', 50, PARAM_INT);
-$courseids = optional_param_array('ids', 0, PARAM_INT);
-$categoryids = optional_param_array('categoryids', 0, PARAM_INT);
-$download = optional_param('download', 0, PARAM_INT);
+// Access checks and Capability check.
 $context = \context_system::instance();
-
-// Access checks and validate.
 require_login(null, false);
-if (!has_capability('moodle/site:config', $context)) {
+if (!has_capability('report/usercoursereports:view', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
 }
-// require_capability('report/usercoursereports:view', $context);
+$type = required_param('type', PARAM_TEXT);
+if (!$type || !in_array($type, ['course', 'user'])) {
+    throw new moodle_exception('invalidtypeparam', 'report_usercoursereports');
+}
+
+// Get request parameters (with defaults).
+$parameters = [
+    'type'              => $type,
+    'id'                => optional_param('id', 0, PARAM_INT),
+    'search'            => optional_param('search', '', PARAM_TEXT),
+    'page'              => optional_param('page', 0, PARAM_INT),
+    'perpage'           => optional_param('perpage', 0, PARAM_INT),
+    'courseformat'      => optional_param('courseformat', '', PARAM_TEXT),
+    'coursevisibility'  => optional_param('coursevisibility', null, PARAM_INT),
+    'createdfrom'       => optional_param('createdfrom', 0, PARAM_INT),
+    'createdto'         => optional_param('createdto', 0, PARAM_INT),
+    'download'          => optional_param('download', 0, PARAM_INT),
+    'categoryids'       => optional_param_array('categoryids', 0, PARAM_INT),
+    'courseids'         => optional_param_array('courseids', 0, PARAM_INT),
+    'roleids'           => optional_param_array('roleids', 0, PARAM_INT),
+];
 
 // Prepare the page information. 
-$pagepath = '/report/usercoursereports/index.php';
-if ($type) {
-    $urlparam['type'] = $type;
-}
-if ($id) {
-    $urlparam['id'] = $id;
-}
-if ($categoryid) {
-    $urlparam['category_id'] = $categoryid;
-}
-if ($page) {
-    $urlparam['page'] = $page;
-}
-if ($perpage) {
-    $urlparam['per_page'] = $perpage;
-}
-if ($search) {
-    $params['search'] = $search;
-}
-$pageurl = new moodle_url($pagepath, $urlparam);
-$redirecturl = new moodle_url($pagepath, ['type' => $type]);
-$page_title = 'usercoursereports-' . $type;
+$pagepath       = '/report/usercoursereports/index.php';
+$urlparams      = usercoursereports::urlparam($parameters);
+$pageurl        = new moodle_url($pagepath, $urlparams);
+$redirecturl    = new moodle_url($pagepath, ['type' => $type]);
+$page_title     = 'usercoursereports-' . $type;
 
 // setup page information.
 $PAGE->set_context($context);
@@ -82,26 +77,41 @@ $PAGE->set_heading($page_title);
 $PAGE->add_body_class('report-usercoursereports');
 $PAGE->navbar->add($page_title, $pageurl);
 $PAGE->requires->jquery();
-// 
-$filter_form = new filter_form($pageurl, [
-    'type' => $type,
-    'search' => $search,
-    'courseids' => $courseids,
-    'categoryids' => $categoryids,
-    'courseformat' => $courseformat,
 
-]);
+// Load AMD module.
+$PAGE->requires->js_call_amd(
+    'report_usercoursereports/usercoursereports',
+    'init',
+    [
+        'actionurl' => $redirecturl,
+        'urlpath' => $pagepath,
+        'type' => $type,
+    ]
+);
+// Load filter.
+$filter_form = new filter_form(
+    $pageurl,
+    $parameters,
+    'GET',
+    '',
+    [
+        'id' => 'usercoursereports-filter',
+        'class' => 'mform report-usercoursereports-filter pt-3 pb-3 me',
+        'data-usercoursereports-type' => $type,
+    ]
+);
 if ($filter_form->is_cancelled()) {
     redirect($redirecturl);
 }
+
 //  Get the data and display.
 $contents = '';
-$contents .= report_content::get_report_list($pagepath);
+$contents .= usercoursereports::get_report_list($type, $pagepath);
 $contents .= $filter_form->render();
 if ($type == 'course') {
-    $contents .= report_content::get_course_info_table($pageurl, $perpage, $page, $search, $categoryids);
+    $contents .= usercoursereports::get_course_info_table($pageurl, $parameters);
 } elseif ($type == 'user') {
-    $contents .= report_content::get_user_info_table($pageurl, $perpage, $page, $search);
+    $contents .= usercoursereports::get_user_info_table($pageurl, $parameters);
 } else {
     $contents .= '<div> Please select the type.</div>';
 }

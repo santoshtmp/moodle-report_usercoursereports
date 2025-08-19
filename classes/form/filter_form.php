@@ -23,7 +23,6 @@
 
 namespace report_usercoursereports\form;
 
-use html_writer;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die;
@@ -42,8 +41,6 @@ class filter_form extends \moodleform {
      * Form definition.
      */
     public function definition() {
-        global  $PAGE;
-
         $mform = $this->_form;
         $type = $this->_customdata['type'];
         $search = $this->_customdata['search'];
@@ -52,22 +49,14 @@ class filter_form extends \moodleform {
         $courseformat = $this->_customdata['courseformat'];
         $filterfieldwrapper_expanded = false;
 
-        // Load AMD module.
-        $PAGE->requires->js_call_amd('report_usercoursereports/usercoursereports', 'init');
-
-        // Set form ID and classes, add usercoursereports-type attribute
-        $mform->updateAttributes([
-            'id' => ($type) ? $type . '-usercoursereports-filter' : 'usercoursereports-filter',
-            'class' => 'mform report-usercoursereports-filter pt-3 pb-3',
-            'data-usercoursereports-type' => $type
-        ]);
-
         // ... header
         $mform->addElement('header', 'filterfieldwrapper', get_string($type . 'filter', 'report_usercoursereports'));
         if ($type == 'course' && ($search || $categoryids || $courseformat)) {
             $filterfieldwrapper_expanded = true;
         }
         $mform->setExpanded('filterfieldwrapper', $filterfieldwrapper_expanded);
+
+        // ... start filter form grid in two column.
         $mform->addElement('html', '<div class="filter-grid">');
 
         // ... search text.
@@ -169,17 +158,11 @@ class filter_form extends \moodleform {
         // Close two-column grid
         $mform->addElement('html', '</div>');
 
-        // ... id
-        $mform->addElement('hidden', 'id');
-        $mform->setType('id', PARAM_INT);
-        $mform->setDefault('id', 0);
-
         // Action btn.
         $buttonarray = [];
-        $buttonarray[] = &$mform->createElement('submit', 'filterbutton', get_string('applyfilter', 'report_usercoursereports'), ['class' => 'apply-filter form-submit']);
-        $buttonarray[] = &$mform->createElement('cancel', 'clearbutton', get_string('clear'));
+        $buttonarray[] = &$mform->createElement('submit', 'applyfilter', get_string('applyfilter', 'report_usercoursereports'), ['id' => 'applyfilter', 'class' => 'apply-filter form-submit']);
+        $buttonarray[] = &$mform->createElement('cancel', '', get_string('clear'), ['id' => 'clearfilter']);
         $mform->addGroup($buttonarray, 'buttonar', '', array(''), false);
-        $mform->getElement('buttonar')->setAttributes(['class' => 'filter-buttons mt-4 mb-4']);
     }
 
     /**
@@ -190,7 +173,6 @@ class filter_form extends \moodleform {
      * @return array Array of errors, empty if no errors.
      */
     function validation($data, $files) {
-        global $CFG, $DB;
 
         $errors = parent::validation($data, $files);
 
