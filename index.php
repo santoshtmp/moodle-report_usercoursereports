@@ -32,8 +32,8 @@ require_once(dirname(__FILE__) . '/../../config.php');
 defined('MOODLE_INTERNAL') || die();
 
 // Access checks and Capability check.
-$context = \context_system::instance();
 require_login(null, false);
+$context = \context_system::instance();
 if (!has_capability('report/usercoursereports:view', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
 }
@@ -50,7 +50,7 @@ $parameters = [
     'page'              => optional_param('page', 0, PARAM_INT),
     'perpage'           => optional_param('perpage', 0, PARAM_INT),
     'courseformat'      => optional_param('courseformat', '', PARAM_TEXT),
-    'coursevisibility'  => optional_param('coursevisibility', null, PARAM_INT),
+    'coursevisibility'  => optional_param('coursevisibility', '', PARAM_INT),
     'createdfrom'       => optional_param('createdfrom', 0, PARAM_INT),
     'createdto'         => optional_param('createdto', 0, PARAM_INT),
     'download'          => optional_param('download', 0, PARAM_INT),
@@ -83,14 +83,13 @@ $PAGE->requires->js_call_amd(
     'report_usercoursereports/usercoursereports',
     'init',
     [
-        'actionurl' => $redirecturl,
         'urlpath' => $pagepath,
         'type' => $type,
     ]
 );
 // Load filter.
 $filter_form = new filter_form(
-    $pageurl,
+    $redirecturl,
     $parameters,
     'GET',
     '',

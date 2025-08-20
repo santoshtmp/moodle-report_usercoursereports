@@ -41,18 +41,25 @@ class usercoursereports {
 
     /**
      * Set parameters
+     * @param
+     * @return array
      */
     public static function urlparam($parameters) {
         $urlparam = [];
+        $skipparam = ['applyfilter', 'clearfilter', 'sesskey', 'mform_isexpanded_id_filterfieldwrapper', '_qf__report_usercoursereports_form_filter_form'];
         foreach ($parameters as $key => $value) {
-            if ($value !== '' && $value !== 0 && $value !== null & !is_array($value)) {
-                $urlparams[$key] = $value;
+            if (in_array($key, $skipparam)) {
+                continue;
+            }
+            if (!empty($value) & !is_array($value)) {
+                $urlparam[$key] = $value;
             } else if (is_array($value) && count($value)) {
                 foreach ($value as $index => $val) {
                     $urlparam[$key . '[' . $index . ']'] = $val;
                 }
             }
         }
+
         return $urlparam;
     }
 
@@ -91,10 +98,10 @@ class usercoursereports {
      * @param string $page_path
      * @return string
      */
-    public static function get_course_info_table($pageurl, $urlparams) {
+    public static function get_course_info_table($pageurl, $parameters) {
         global $OUTPUT;
-        $perpage = ($urlparams['perpage']) ?: 20;
-        $allcourseinfo = course_data_handler::get_all_course_info($perpage, $urlparams['page'], $urlparams['search'], $urlparams['categoryids']);
+        $perpage = ($parameters['perpage']) ?: 20;
+        $allcourseinfo = course_data_handler::get_all_course_info($perpage, $parameters['page'], $parameters['search'], $parameters['categoryids']);
         $strdata = new stdClass();
         $strdata->data_from = $allcourseinfo['meta']['data_from'];
         $strdata->data_to = $allcourseinfo['meta']['data_to'];
@@ -102,7 +109,14 @@ class usercoursereports {
         // 
         $contents = '';
         // Display the form.
-        $contents .= html_writer::start_tag('div', ['class' => 'report-usercoursereports', 'usercoursereports-filter-type' => 'course']);
+        $contents .= html_writer::start_tag('div', [
+            'id' => 'report-usercoursereports-filter-area',
+            'usercoursereports-filter-type' => $parameters['type'],
+            'total_record' => $allcourseinfo['meta']['total_record'],
+            'data_from' => $allcourseinfo['meta']['data_from'],
+            'data_to' => $allcourseinfo['meta']['data_to'],
+            'pagenumber' => $allcourseinfo['meta']['pagenumber'],
+        ]);
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
         $contents .= html_writer::start_tag('table', ['id' => 'course-report-table', 'class' => 'generaltable generalbox']);
         $contents .= html_writer::start_tag('thead');
@@ -184,17 +198,25 @@ class usercoursereports {
      * @param string $page_path
      * @return string
      */
-    public static function get_user_info_table($pageurl, $urlparams) {
+    public static function get_user_info_table($pageurl, $parameters) {
         global $OUTPUT;
         // 
-        $perpage = ($urlparams['perpage']) ?: 20;
-        $alluserinfo = user_data_handler::get_all_user_info($perpage, $urlparams['page'], $urlparams['search']);
+        $perpage = ($parameters['perpage']) ?: 20;
+        $alluserinfo = user_data_handler::get_all_user_info($perpage, $parameters['page'], $parameters['search']);
         $strdata = new stdClass();
         $strdata->data_from = $alluserinfo['meta']['data_from'];
         $strdata->data_to = $alluserinfo['meta']['data_to'];
         $strdata->data_total = $alluserinfo['meta']['total_record'];
         // 
         $contents = '';
+        $contents .= html_writer::start_tag('div', [
+            'id' => 'report-usercoursereports-filter-area',
+            'usercoursereports-filter-type' => $parameters['type'],
+            'total_record' => $alluserinfo['meta']['total_record'],
+            'data_from' => $alluserinfo['meta']['data_from'],
+            'data_to' => $alluserinfo['meta']['data_to'],
+            'pagenumber' => $alluserinfo['meta']['pagenumber'],
+        ]);
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
         $contents .= html_writer::start_tag('table', ['id' => 'user-report-table', 'class' => 'generaltable generalbox']);
         $contents .= html_writer::start_tag('thead');
@@ -203,7 +225,7 @@ class usercoursereports {
             html_writer::tag('th', get_string('sn', 'report_usercoursereports')) .
                 html_writer::tag('th', get_string('fullname')) .
                 html_writer::tag('th', get_string('email')) .
-                html_writer::tag('th', get_string('location')) .
+                html_writer::tag('th', get_string('city')) .
                 html_writer::tag('th', get_string('roles')) .
                 html_writer::tag('th', get_string('courses')) .
                 html_writer::tag('th', get_string('lastaccess', 'report_usercoursereports'))
@@ -242,13 +264,7 @@ class usercoursereports {
                 ['class' => 'd-flex']
             );
             $contents .= html_writer::tag('td', $user['email']);
-            $contents .= html_writer::tag(
-                'td',
-
-                (($user['address']) ?  html_writer::tag('div', get_string('address') . ': ' . $user['address']) : '') .
-                    (($user['city']) ? html_writer::tag('div', get_string('city') . ': ' . $user['city']) : '') .
-                    (($user['country_name']) ? html_writer::tag('div', get_string('country') . ': ' . $user['country_name']) : '')
-            );
+            $contents .= html_writer::tag('td', $user['city']);
             $contents .= html_writer::tag(
                 'td',
                 html_writer::alist(
@@ -268,6 +284,7 @@ class usercoursereports {
             $perpage,
             $pageurl
         );
+        $contents .= html_writer::end_tag('div');
 
         return $contents;
     }

@@ -31,6 +31,7 @@ use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
+use report_usercoursereports\form\filter_form;
 use report_usercoursereports\usercoursereports;
 
 defined('MOODLE_INTERNAL') || die();
@@ -54,34 +55,7 @@ class get_report_table extends external_api {
     public static function execute_parameters() {
         return new external_function_parameters(
             [
-                'type' => new external_value(PARAM_TEXT, 'Report type, e.g., "course" or "user"'),
-                'id' => new external_value(PARAM_INT, 'Optional ID parameter', VALUE_DEFAULT, 0),
-                'search' => new external_value(PARAM_TEXT, 'Search term for filtering results', VALUE_DEFAULT, ''),
-                'page' => new external_value(PARAM_INT, 'Page number for pagination', VALUE_DEFAULT, 0),
-                'perpage' => new external_value(PARAM_INT, 'Number of items per page', VALUE_DEFAULT, 0),
-                'courseformat' => new external_value(PARAM_TEXT, 'Course format filter', VALUE_DEFAULT, ''),
-                'coursevisibility' => new external_value(PARAM_INT, 'Course visibility filter', VALUE_DEFAULT, null),
-                'createdfrom' => new external_value(PARAM_INT, 'Filter courses/users created from this timestamp', VALUE_DEFAULT, 0),
-                'createdto' => new external_value(PARAM_INT, 'Filter courses/users created up to this timestamp', VALUE_DEFAULT, 0),
-                'download' => new external_value(PARAM_INT, 'Download flag', VALUE_DEFAULT, 0),
-                'categoryids' => new external_multiple_structure(
-                    new external_value(PARAM_INT, 'Category ID'),
-                    'List of category IDs to filter courses',
-                    VALUE_DEFAULT,
-                    []
-                ),
-                'courseids' => new external_multiple_structure(
-                    new external_value(PARAM_INT, 'Course ID'),
-                    'List of course IDs to filter users',
-                    VALUE_DEFAULT,
-                    []
-                ),
-                'roleids' => new external_multiple_structure(
-                    new external_value(PARAM_INT, 'Role ID'),
-                    'List of role IDs to filter users',
-                    VALUE_DEFAULT,
-                    []
-                ),
+                'querystring' => new external_value(PARAM_RAW, 'Filter form serialize querystring',),
             ]
         );
     }
@@ -94,26 +68,40 @@ class get_report_table extends external_api {
      * @return array List of courses or users
      */
     public static function execute($parameters) {
-        global $DB;
         // Validate the incoming parameters according to execute_parameters().
-        $params = self::validate_parameters(self::execute_parameters(), $parameters);
+        $param = self::validate_parameters(self::execute_parameters(), [
+            'querystring' => $parameters,
+        ]);
         $context = \context_system::instance();
         self::validate_context($context);
         require_capability('report/usercoursereports:view', $context);
         // 
-        $urlparams = usercoursereports::urlparam($params);
-        $pagepath = '/report/usercoursereports/index.php';
-        $pageurl = new moodle_url($pagepath, $urlparams);
-        $type = $params['type'] ?? '';
-
-
+        parse_str($param['querystring'], $data);
+        $type = $data['type'];
+        $filter_form = new filter_form(
+            null,
+            $data,
+            'GET',
+            '',
+            null,
+            true,
+            $data
+        );
+        $formdata   = (array)$filter_form->get_data();
+        $formdata   = ['type' => $type] + $formdata;
+        $pagepath   = '/report/usercoursereports/index.php';
+        $urlparams  = usercoursereports::urlparam($formdata);
+        $pageurl    = new \moodle_url($pagepath, $urlparams);
+        //  Get the report table.
+        $contents = '';
         if ($type == 'course') {
-            $contents = usercoursereports::get_course_info_table($pageurl, $parameters);
+            $contents .= usercoursereports::get_course_info_table($pageurl, $formdata);
         } elseif ($type == 'user') {
-            $contents = usercoursereports::get_user_info_table($pageurl, $parameters);
+            $contents .= usercoursereports::get_user_info_table($pageurl, $formdata);
         } else {
-            $contents = '<div> Please select the type.</div>';
+            $contents .= '<div> Please select the type.</div>';
         }
+        // Prepare response values.
         return [
             'status' => true,
             'reporttable' => $contents,
@@ -127,13 +115,10 @@ class get_report_table extends external_api {
      * @return external_multiple_structure
      */
     public static function execute_returns() {
-        return new external_multiple_structure(
-            new external_single_structure([
-                'status' => new external_value(PARAM_BOOL, 'status'),
-                'reporttable' => new external_value(PARAM_TEXT, 'Report table with html'),
-                'message' => new external_value(PARAM_TEXT, 'Status message'),
-
-            ])
-        );
+        return new external_single_structure([
+            'status' => new external_value(PARAM_BOOL, 'status'),
+            'reporttable' => new external_value(PARAM_RAW, 'Report table with html'),
+            'message' => new external_value(PARAM_TEXT, 'Status message'),
+        ]);
     }
 }

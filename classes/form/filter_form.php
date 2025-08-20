@@ -122,7 +122,7 @@ class filter_form extends \moodleform {
 
             // Course format dropdown.
             $formats = \core_component::get_plugin_list('format');
-            $formatoptions = ['' => get_string('all')];
+            $formatoptions = ['all' => get_string('all')];
             foreach ($formats as $formatname => $formatpath) {
                 $formatoptions[$formatname] = get_string('pluginname', "format_{$formatname}");
             }
@@ -132,12 +132,12 @@ class filter_form extends \moodleform {
 
             // Course visibility dropdown.
             $visibilityoptions = [
-                ''  => get_string('all'),
+                'all'  => get_string('all'),
                 '1' => get_string('show'),
                 '0' => get_string('hide'),
             ];
             $mform->addElement('select', 'coursevisibility', get_string('coursevisibility', 'report_usercoursereports'), $visibilityoptions, ['class' => 'usercoursereports-filter-field']);
-            $mform->setType('coursevisibility', PARAM_INT);
+            $mform->setType('coursevisibility', PARAM_ALPHANUMEXT);
             $mform->setDefault('coursevisibility', '');
 
             // Created from date.
