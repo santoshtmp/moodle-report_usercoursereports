@@ -280,15 +280,38 @@ class user_data_handler {
 
 
     /**
-     * @param int $perpage 
-     * @param int $pagenumber 
-     * @param string $search_user 
-     * @return array
+     * Get all user information based on filters and pagination.
+     *
+     * @param array $parameters {
+     *     Optional. An array of filter and pagination options.
+     *
+     *     @type int    $page        Page number for pagination (default 0).
+     *     @type int    $perpage     Number of records per page (default 20).
+     *     @type int    $id          User ID filter (default 0).
+     *     @type string $search      Search keyword for users (default '').
+     *     @type array  $courseids   Course IDs filter (default []).
+     *     @type array  $roleids     Role IDs filter (default []).
+     *     @type int    $createdfrom Timestamp filter for created date from (default 0).
+     *     @type int    $createdto   Timestamp filter for created date to (default 0).
+     * }
+     *
+     * @return array List of user information records.
      */
-    public static function get_all_user_info($perpage = 20, $pagenumber = 1, $search_user = '', $user_id = '', $role_id = '', $course_id = '') {
+    public static function get_all_user_info($parameters) {
 
         global $DB;
         $alluserinfo = [];
+        // ... get parameter
+
+        $pagenumber = $parameters['page'] ?? 0;
+        $perpage = $parameters['perpage'] ?? 20;
+        $user_id = $parameters['id'] ?? 0;
+        $search_user = $parameters['search'] ?? '';
+        $courseids = $parameters['courseids'] ?? [];
+        $roleids = $parameters['roleids'] ?? [];
+        $createdfrom = (int)$parameters['createdfrom'] ?? 0;
+        $createdto = (int)$parameters['createdto'] ?? 0;
+
         // 
         $limitfrom = 0;
         $perpage = ($perpage) ?: 20;
@@ -318,15 +341,27 @@ class user_data_handler {
             $sql_params['user_id'] = $user_id;
             $where_condition[] = 'u.id = :user_id';
         }
-        if ($role_id) {
-            $sql_params['role_id'] = $role_id;
-            $where_condition[] = 'ra.roleid = :role_id';
-            $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
+        if (is_array($roleids) && count($roleids) > 0) {
+            if (in_array(-1, $roleids)) {
+                $admin_role = true;
+            }
+            // Remove 0 and -1 values.
+            $roleids = array_filter($roleids, function ($value) {
+                return $value !== -1 && $value !== 0;
+            });
+            // now if there are more roles then process further
+            if (count($roleids) > 0) {
+                $sql_params['roleids'] = implode(',', $roleids);
+                $where_condition[] = 'ra.roleid IN (:roleids)';
+                $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
+            }
+            // var_dump($sql_params['roleids']);
+            // var_dump($roleids);
         }
-        if ($course_id) {
-            $sql_params['course_id'] = $course_id;
+        if (is_array($courseids) && count($courseids) > 0) {
+            $sql_params['courseids'] = implode(',', $courseids);
             $sql_params['contextlevel'] = CONTEXT_COURSE;
-            $where_condition[] = 'ctx.instanceid = :course_id';
+            $where_condition[] = 'ctx.instanceid IN (:courseids)';
             $where_condition[] = 'ctx.contextlevel = :contextlevel';
             $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
             $query_join['context'] = "INNER JOIN {context} AS ctx ON ra.contextid = ctx.id";
@@ -346,22 +381,22 @@ class user_data_handler {
         // count_records_sql
 
         //create return value
-        $page_data_count = $limitfrom;
+        $datadisplaycount = $limitfrom;
         foreach ($records as $record) {
-            $page_data_count++;
+            $datadisplaycount++;
             $record_info = self::get_user_info($record->id, false);
-            $record_info['sn'] = $page_data_count;
+            $record_info['sn'] = $datadisplaycount;
             $alluserinfo['data'][] = $record_info;
         }
         // meta information
         $alluserinfo['meta'] = [
-            'total_record' => count($total_records),
-            'total_page' => ceil(count($total_records) / $perpage),
+            'totalrecords' => count($total_records),
+            'totalpage' => ceil(count($total_records) / $perpage),
             'pagenumber' => $pagenumber,
             'perpage' => $perpage,
-            'page_data_count' => $page_data_count,
-            'data_from' => $limitfrom + 1,
-            'data_to' => $page_data_count,
+            'datadisplaycount' => $datadisplaycount,
+            'datafrom' => ($datadisplaycount) ? $limitfrom + 1 : $limitfrom,
+            'datato' => $datadisplaycount,
         ];
         // return data
         return $alluserinfo;
@@ -396,7 +431,7 @@ class user_data_handler {
         }
         // Get all roles.
         $roles_data = [
-            '0' => get_string('everyone'),
+            '0' => get_string('allroles', 'report_usercoursereports'),
             '-1' => get_string('admin')
         ];
 

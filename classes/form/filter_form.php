@@ -183,14 +183,15 @@ class filter_form extends \moodleform {
      * @param array $files Uploaded files (not used here).
      * @return array Array of errors, empty if no errors.
      */
-    function validation($data, $files) {
+    public function validation($data, $files) {
 
         $errors = parent::validation($data, $files);
 
         // Ensure "from" date is not greater than "to" date.
         if (!empty($data['createdfrom']) && !empty($data['createdto'])) {
             if ($data['createdfrom'] > $data['createdto']) {
-                $errors['createdto'] = get_string('invaliddaterange', 'report_usercoursereports');
+                $errors['createdfrom'] = get_string('invalidcreatedfromdate', 'report_usercoursereports');
+                $errors['createdto'] = get_string('invalidcreatedtodate', 'report_usercoursereports');
             }
         }
 

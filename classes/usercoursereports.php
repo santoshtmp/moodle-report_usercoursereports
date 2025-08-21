@@ -102,20 +102,20 @@ class usercoursereports {
     public static function get_course_info_table($pageurl, $parameters) {
         global $OUTPUT;
         $perpage = ($parameters['perpage']) ?: 20;
-        $allcourseinfo = course_data_handler::get_all_course_info($perpage, $parameters['page'], $parameters['search'], $parameters['categoryids']);
+        $allcourseinfo = course_data_handler::get_all_course_info($parameters);
         $strdata = new stdClass();
-        $strdata->data_from = $allcourseinfo['meta']['data_from'];
-        $strdata->data_to = $allcourseinfo['meta']['data_to'];
-        $strdata->data_total = $allcourseinfo['meta']['total_record'];
+        $strdata->datafrom = $allcourseinfo['meta']['datafrom'];
+        $strdata->datato = $allcourseinfo['meta']['datato'];
+        $strdata->datatotal = $allcourseinfo['meta']['totalrecords'];
         // 
         $contents = '';
         // Display the form.
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
             'usercoursereports-filter-type' => $parameters['type'],
-            'total_record' => $allcourseinfo['meta']['total_record'],
-            'data_from' => $allcourseinfo['meta']['data_from'],
-            'data_to' => $allcourseinfo['meta']['data_to'],
+            'totalrecords' => $allcourseinfo['meta']['totalrecords'],
+            'datafrom' => $allcourseinfo['meta']['datafrom'],
+            'datato' => $allcourseinfo['meta']['datato'],
             'pagenumber' => $allcourseinfo['meta']['pagenumber'],
         ]);
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
@@ -168,7 +168,7 @@ class usercoursereports {
                     $course['category_name']
                 )
             );
-            $contents .= html_writer::tag('td', $course['enroll_total_student']);
+            $contents .= html_writer::tag('td', $course['count_enrolled_users']);
             $contents .= html_writer::tag('td', get_string('pluginname', 'format_' . $course['course_format']));
             $contents .= html_writer::tag('td', $course['course_visible'] ? get_string('show') : get_string('hide'));
             $contents .= html_writer::tag(
@@ -184,7 +184,7 @@ class usercoursereports {
         $contents .= html_writer::end_tag('tbody');
         $contents .= html_writer::end_tag('table');
         $contents .= $OUTPUT->paging_bar(
-            $allcourseinfo['meta']['total_record'],
+            $allcourseinfo['meta']['totalrecords'],
             $allcourseinfo['meta']['pagenumber'],
             $perpage,
             $pageurl
@@ -204,19 +204,19 @@ class usercoursereports {
         global $OUTPUT;
         // 
         $perpage = ($parameters['perpage']) ?: 20;
-        $alluserinfo = user_data_handler::get_all_user_info($perpage, $parameters['page'], $parameters['search']);
+        $alluserinfo = user_data_handler::get_all_user_info($parameters);
         $strdata = new stdClass();
-        $strdata->data_from = $alluserinfo['meta']['data_from'];
-        $strdata->data_to = $alluserinfo['meta']['data_to'];
-        $strdata->data_total = $alluserinfo['meta']['total_record'];
+        $strdata->datafrom = $alluserinfo['meta']['datafrom'];
+        $strdata->datato = $alluserinfo['meta']['datato'];
+        $strdata->datatotal = $alluserinfo['meta']['totalrecords'];
         // 
         $contents = '';
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
             'usercoursereports-filter-type' => $parameters['type'],
-            'total_record' => $alluserinfo['meta']['total_record'],
-            'data_from' => $alluserinfo['meta']['data_from'],
-            'data_to' => $alluserinfo['meta']['data_to'],
+            'totalrecords' => $alluserinfo['meta']['totalrecords'],
+            'datafrom' => $alluserinfo['meta']['datafrom'],
+            'datato' => $alluserinfo['meta']['datato'],
             'pagenumber' => $alluserinfo['meta']['pagenumber'],
         ]);
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
@@ -281,7 +281,7 @@ class usercoursereports {
         $contents .= html_writer::end_tag('tbody');
         $contents .= html_writer::end_tag('table');
         $contents .= $OUTPUT->paging_bar(
-            $alluserinfo['meta']['total_record'],
+            $alluserinfo['meta']['totalrecords'],
             $alluserinfo['meta']['pagenumber'],
             $perpage,
             $pageurl

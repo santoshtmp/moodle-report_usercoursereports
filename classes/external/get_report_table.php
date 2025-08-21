@@ -68,6 +68,12 @@ class get_report_table extends external_api {
      * @return array List of courses or users
      */
     public static function execute($parameters) {
+        $filter_data = [
+            'status' => true,
+            'is_validated' => true,
+            'reporttable' => '',
+            'message' => '',
+        ];
         // Validate the incoming parameters according to execute_parameters().
         $param = self::validate_parameters(self::execute_parameters(), [
             'querystring' => $parameters,
@@ -75,46 +81,55 @@ class get_report_table extends external_api {
         $context = \context_system::instance();
         self::validate_context($context);
         require_capability('report/usercoursereports:view', $context);
-        // 
+        // ... get query string into variables.
         parse_str($param['querystring'], $data);
         $type = $data['type'];
+        // ... check type param
+        if (!$type || !in_array($type, ['course', 'user'])) {
+            $filter_data['message'] = get_string('invalidtypeparam', 'report_usercoursereports');
+            return $filter_data;
+        }
+        // ... check if the form data or pagination data.
         $_qf__report_usercoursereports_form_filter_form = $data['_qf__report_usercoursereports_form_filter_form'] ?? 0;
         if ($_qf__report_usercoursereports_form_filter_form) {
-            $filter_form = new filter_form(
-                null,
-                $data,
-                'GET',
-                '',
-                null,
-                true,
-                $data,
-            );
-            $formdata   = (array)$filter_form->get_data();
-            $querydata   = ['type' => $type] + $formdata;
+            $filter_form = new filter_form(null, $data, 'GET', '', null, true, $data);
+            // ... check and get validation message
+            $is_validated = $filter_form->is_validated();
+            if (!$is_validated) {
+                $errors = $filter_form->validation($data, []);
+                $validation_errors = [];
+                foreach ($errors as $key => $errorvalue) {
+                    $validation_errors[] = [
+                        'field' => $key,
+                        'error' => $errorvalue,
+                    ];
+                }
+                $filter_data['status'] = $is_validated;
+                $filter_data['is_validated'] = $is_validated;
+                $filter_data['validation_errors'] = $validation_errors;
+            } else {
+                // ... get the form data if validation is true
+                $formdata   = (array)$filter_form->get_data();
+                $querydata   = ['type' => $type] + $formdata;
+            }
         } else {
             $querydata = $data;
         }
+        if ($filter_data['status'] && $filter_data['is_validated']) {
+            // ... set page url
+            $pagepath   = '/report/usercoursereports/index.php';
+            $urlparams  = usercoursereports::urlparam($querydata);
+            $pageurl    = new \moodle_url($pagepath, $urlparams);
+            $filter_data['pageurl'] = $pageurl->out(false);
 
-        // 
-        $pagepath   = '/report/usercoursereports/index.php';
-        $urlparams  = usercoursereports::urlparam($querydata);
-        $pageurl    = new \moodle_url($pagepath, $urlparams);
-        //  Get the report table.
-        $contents = '';
-        if ($type == 'course') {
-            $contents .= usercoursereports::get_course_info_table($pageurl, $querydata);
-        } elseif ($type == 'user') {
-            $contents .= usercoursereports::get_user_info_table($pageurl, $querydata);
-        } else {
-            $contents .= '<div> Please select the type.</div>';
+            //  Get the report table.
+            if ($type == 'course') {
+                $filter_data['reporttable'] = usercoursereports::get_course_info_table($pageurl, $querydata);
+            } elseif ($type == 'user') {
+                $filter_data['reporttable'] = usercoursereports::get_user_info_table($pageurl, $querydata);
+            }
         }
-        // Prepare response values.
-        return [
-            'status' => true,
-            'reporttable' => $contents,
-            'pageurl' => $pageurl->out(false),
-            'message' => 'message',
-        ];
+        return $filter_data;
     }
 
     /**
@@ -123,11 +138,24 @@ class get_report_table extends external_api {
      * @return external_multiple_structure
      */
     public static function execute_returns() {
-        return new external_single_structure([
-            'status' => new external_value(PARAM_BOOL, 'status'),
-            'reporttable' => new external_value(PARAM_RAW, 'Report table with html'),
-            'pageurl' => new external_value(PARAM_TEXT, 'filter page url'),
-            'message' => new external_value(PARAM_TEXT, 'Status message'),
-        ]);
+        return new external_single_structure(
+            [
+                'status' => new external_value(PARAM_BOOL, 'status'),
+                'reporttable' => new external_value(PARAM_RAW, 'Report table with html'),
+                'message' => new external_value(PARAM_TEXT, 'Status message'),
+                'pageurl' => new external_value(PARAM_TEXT, 'filter page url', VALUE_OPTIONAL),
+                'is_validated' => new external_value(PARAM_BOOL, 'filter form validated', VALUE_OPTIONAL),
+                'validation_errors' => new external_multiple_structure(
+                    new external_single_structure(
+                        [
+                            'field' => new external_value(PARAM_ALPHANUMEXT, 'Form field name'),
+                            'error' => new external_value(PARAM_TEXT, 'Validation error message'),
+                        ]
+                    ),
+                    'Validation errors per field',
+                    VALUE_OPTIONAL
+                ),
+            ]
+        );
     }
 }

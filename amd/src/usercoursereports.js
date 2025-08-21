@@ -43,10 +43,21 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function (response) {
+            // update report filter table content
             if (response.status && response.reporttable) {
                 window.history.replaceState('', 'url', response.pageurl);
                 $('#' + filter_area_id).replaceWith(response.reporttable);
-                // document.getElementById(filter_area_id).scrollIntoView({ behavior: 'smooth' });
+            }
+            // field validation and error
+            $('#usercoursereports-filter [id^=id_error_]').html('').hide();
+            if (!response.is_validated) {
+                let validation_errors = response.validation_errors || [];
+                validation_errors.forEach(element => {
+                    let $errorContainer = $('#id_error_' + element.field);
+                    if ($errorContainer.length) {
+                        $errorContainer.html(element.error).show();
+                    }
+                });
             }
         });
         ajaxrequest.fail(function (response) {
@@ -76,11 +87,14 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                     get_filter_report_table(formquerystring);
                 }
             });
+
             // Pagination.
             $(document).on('click', '#' + filter_area_id + ' nav.pagination a.page-link', function (e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
-                get_filter_report_table(formquerystring);
+                if (formquerystring) {
+                    get_filter_report_table(formquerystring);
+                }
             });
 
         }
