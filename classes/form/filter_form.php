@@ -42,18 +42,27 @@ class filter_form extends \moodleform {
      */
     public function definition() {
         $mform = $this->_form;
-        $type = $this->_customdata['type'];
-        $search = $this->_customdata['search'];
-        $courseids = $this->_customdata['courseids'];
-        $categoryids = $this->_customdata['categoryids'];
-        $courseformat = $this->_customdata['courseformat'];
+        // ... get custom data.
+        $type = $this->_customdata['type'] ?? '';
+        $search = $this->_customdata['search'] ?? '';
+        $courseids = $this->_customdata['courseids'] ?? [];
+        $roleids = $this->_customdata['roleids'] ?? [];
+        $categoryids = $this->_customdata['categoryids'] ?? [];
+        $country = $this->_customdata['country'] ?? '';
+        $courseformat = $this->_customdata['courseformat'] ?? '';
+        $coursevisibility = $this->_customdata['coursevisibility'] ?? '';
+        $createdfrom = (int)$this->_customdata['createdfrom'] ?? '';
+        $createdto = (int)$this->_customdata['createdto'] ?? '';
         $filterfieldwrapper_expanded = false;
+        if (
+            ($type == 'course' &&  ($search || $categoryids || $courseformat || $coursevisibility || $createdfrom || $createdto)) ||
+            ($type == 'user' &&  ($search || $courseids || $roleids || $country))
+        ) {
+            $filterfieldwrapper_expanded = true;
+        }
 
         // ... header
         $mform->addElement('header', 'filterfieldwrapper', get_string($type . 'filter', 'report_usercoursereports'));
-        if ($type == 'course' && ($search || $categoryids || $courseformat)) {
-            $filterfieldwrapper_expanded = true;
-        }
         $mform->setExpanded('filterfieldwrapper', $filterfieldwrapper_expanded);
 
         // ... start filter form grid in two column.
@@ -92,15 +101,15 @@ class filter_form extends \moodleform {
                     'class' => 'usercoursereports-filter-field'
                 ]
             );
-            $mform->setType('categoryids', PARAM_INT);
-            $mform->setDefault('categoryids', $categoryids);
+            $mform->setType('roleids', PARAM_INT);
+            $mform->setDefault('roleids', $roleids);
 
             // Country filter.
             $countries = get_string_manager()->get_list_of_countries();
             $countryoptions = ['' => get_string('allcountries', 'report_usercoursereports')] + $countries;
             $mform->addElement('select', 'country', get_string('country'), $countryoptions, ['class' => 'usercoursereports-filter-field']);
             $mform->setType('country', PARAM_TEXT);
-            $mform->setDefault('country', '');
+            $mform->setDefault('country', $country);
         }
 
 
@@ -127,18 +136,18 @@ class filter_form extends \moodleform {
                 $formatoptions[$formatname] = get_string('pluginname', "format_{$formatname}");
             }
             $mform->addElement('select', 'courseformat', get_string('courseformat', 'report_usercoursereports'), $formatoptions, ['class' => 'usercoursereports-filter-field']);
-            $mform->setType('courseformat', PARAM_ALPHANUMEXT);
-            $mform->setDefault('courseformat', '');
+            $mform->setType('courseformat', PARAM_TEXT);
+            $mform->setDefault('courseformat', $courseformat);
 
             // Course visibility dropdown.
             $visibilityoptions = [
                 'all'  => get_string('all'),
-                '1' => get_string('show'),
-                '0' => get_string('hide'),
+                'show' => get_string('show'),
+                'hide' => get_string('hide'),
             ];
             $mform->addElement('select', 'coursevisibility', get_string('coursevisibility', 'report_usercoursereports'), $visibilityoptions, ['class' => 'usercoursereports-filter-field']);
-            $mform->setType('coursevisibility', PARAM_ALPHANUMEXT);
-            $mform->setDefault('coursevisibility', '');
+            $mform->setType('coursevisibility', PARAM_TEXT);
+            $mform->setDefault('coursevisibility', $coursevisibility);
 
             // Created from date.
             $mform->addElement('date_selector', 'createdfrom', get_string('coursecreatedfrom', 'report_usercoursereports'), [
@@ -146,6 +155,7 @@ class filter_form extends \moodleform {
             ]);
             $mform->setType('createdfrom', PARAM_INT);
             $mform->getElement('createdfrom')->setAttributes(['class' => 'usercoursereports-filter-field']);
+            $mform->setDefault('createdfrom', $createdfrom);
 
 
             // Created to date.
@@ -154,6 +164,7 @@ class filter_form extends \moodleform {
             ]);
             $mform->setType('createdto', PARAM_INT);
             $mform->getElement('createdto')->setAttributes(['class' => 'usercoursereports-filter-field']);
+            $mform->setDefault('createdto', $createdto);
         }
         // Close two-column grid
         $mform->addElement('html', '</div>');

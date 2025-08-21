@@ -24,12 +24,17 @@
 define(['jquery', 'core/ajax'], function ($, Ajax) {
 
     var filter_area_id = 'report-usercoursereports-filter-area';
+    var applyfilterbtn_id = 'applyfilter';
+
     /**
      *
      * @param {*} formquerystring
      */
     function get_filter_report_table(formquerystring) {
-        // Call Moodle WebService via core/ajax
+        $('#' + filter_area_id).attr('aria-busy', 'true');
+        $('#' + applyfilterbtn_id).prop('disabled', true);
+        $('#filter-loading-wrapper').show();
+        // make ajax call
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
             args: {
@@ -38,17 +43,19 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function (response) {
-            window.console.log(response);
-            if (response && response.reporttable) {
+            if (response.status && response.reporttable) {
+                window.history.replaceState('', 'url', response.pageurl);
                 $('#' + filter_area_id).replaceWith(response.reporttable);
-            } else {
-                $('#' + filter_area_id).html('<div class="alert alert-warning">No data found</div>');
+                // document.getElementById(filter_area_id).scrollIntoView({ behavior: 'smooth' });
             }
         });
         ajaxrequest.fail(function (response) {
             window.console.log(response);
         });
         ajaxrequest.always(function () {
+            $('#' + filter_area_id).removeAttr('aria-busy');
+            $('#' + applyfilterbtn_id).prop('disabled', false);
+            $('#filter-loading-wrapper').hide();
         });
     }
 
@@ -62,9 +69,12 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
 
             // On form submit
             $('#usercoursereports-filter').on('submit', function (e) {
-                e.preventDefault();
-                const formquerystring = $(this).serialize();
-                get_filter_report_table(formquerystring);
+                let clickedButton = $(this).find('input[type=submit]:focus').attr('name');
+                if (clickedButton != 'cancel') {
+                    e.preventDefault();
+                    const formquerystring = $(this).serialize();
+                    get_filter_report_table(formquerystring);
+                }
             });
             // Pagination.
             $(document).on('click', '#' + filter_area_id + ' nav.pagination a.page-link', function (e) {

@@ -47,8 +47,9 @@ class usercoursereports {
     public static function urlparam($parameters) {
         $urlparam = [];
         $skipparam = ['applyfilter', 'clearfilter', 'sesskey', 'mform_isexpanded_id_filterfieldwrapper', '_qf__report_usercoursereports_form_filter_form'];
+        $skipallparam = ['courseformat', 'coursevisibility'];
         foreach ($parameters as $key => $value) {
-            if (in_array($key, $skipparam)) {
+            if (in_array($key, $skipparam) || (in_array($key, $skipallparam) && $value == 'all')) {
                 continue;
             }
             if (!empty($value) & !is_array($value)) {
@@ -188,6 +189,7 @@ class usercoursereports {
             $perpage,
             $pageurl
         );
+        $contents .= html_writer::tag('div', $OUTPUT->render_from_template("core/loading", []), ['id' => 'filter-loading-wrapper', 'style' => 'display:none;']);
         $contents .= html_writer::end_tag('div');
 
         return $contents;
@@ -284,6 +286,7 @@ class usercoursereports {
             $perpage,
             $pageurl
         );
+        $contents .= html_writer::tag('div', $OUTPUT->render_from_template("core/loading", []), ['id' => 'filter-loading-wrapper', 'style' => 'display:none;']);
         $contents .= html_writer::end_tag('div');
 
         return $contents;

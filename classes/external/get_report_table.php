@@ -78,26 +78,33 @@ class get_report_table extends external_api {
         // 
         parse_str($param['querystring'], $data);
         $type = $data['type'];
-        $filter_form = new filter_form(
-            null,
-            $data,
-            'GET',
-            '',
-            null,
-            true,
-            $data
-        );
-        $formdata   = (array)$filter_form->get_data();
-        $formdata   = ['type' => $type] + $formdata;
+        $_qf__report_usercoursereports_form_filter_form = $data['_qf__report_usercoursereports_form_filter_form'] ?? 0;
+        if ($_qf__report_usercoursereports_form_filter_form) {
+            $filter_form = new filter_form(
+                null,
+                $data,
+                'GET',
+                '',
+                null,
+                true,
+                $data,
+            );
+            $formdata   = (array)$filter_form->get_data();
+            $querydata   = ['type' => $type] + $formdata;
+        } else {
+            $querydata = $data;
+        }
+
+        // 
         $pagepath   = '/report/usercoursereports/index.php';
-        $urlparams  = usercoursereports::urlparam($formdata);
+        $urlparams  = usercoursereports::urlparam($querydata);
         $pageurl    = new \moodle_url($pagepath, $urlparams);
         //  Get the report table.
         $contents = '';
         if ($type == 'course') {
-            $contents .= usercoursereports::get_course_info_table($pageurl, $formdata);
+            $contents .= usercoursereports::get_course_info_table($pageurl, $querydata);
         } elseif ($type == 'user') {
-            $contents .= usercoursereports::get_user_info_table($pageurl, $formdata);
+            $contents .= usercoursereports::get_user_info_table($pageurl, $querydata);
         } else {
             $contents .= '<div> Please select the type.</div>';
         }
@@ -105,6 +112,7 @@ class get_report_table extends external_api {
         return [
             'status' => true,
             'reporttable' => $contents,
+            'pageurl' => $pageurl->out(false),
             'message' => 'message',
         ];
     }
@@ -118,6 +126,7 @@ class get_report_table extends external_api {
         return new external_single_structure([
             'status' => new external_value(PARAM_BOOL, 'status'),
             'reporttable' => new external_value(PARAM_RAW, 'Report table with html'),
+            'pageurl' => new external_value(PARAM_TEXT, 'filter page url'),
             'message' => new external_value(PARAM_TEXT, 'Status message'),
         ]);
     }
