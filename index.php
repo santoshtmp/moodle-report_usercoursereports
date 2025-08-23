@@ -80,7 +80,7 @@ $PAGE->set_subpage((string)$type);
 $PAGE->set_title($page_title);
 $PAGE->set_heading($page_title);
 $PAGE->add_body_class('report-usercoursereports');
-$PAGE->navbar->add($page_title, $pageurl);
+$PAGE->navbar->add(get_string($type . 'reports', 'report_usercoursereports'), $pageurl);
 $PAGE->requires->jquery();
 
 // Load AMD module.

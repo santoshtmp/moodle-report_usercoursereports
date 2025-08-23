@@ -84,7 +84,7 @@ class usercoursereports {
         );
         $contents .= html_writer::link(
             new moodle_url($page_path, ['type' => 'user']),
-            get_string('usereports', 'report_usercoursereports'),
+            get_string('userreports', 'report_usercoursereports'),
             ['class' => ($type == 'user') ? 'active btn btn-primary' : 'btn btn-secondary']
         );
         $contents .= html_writer::end_tag('div');

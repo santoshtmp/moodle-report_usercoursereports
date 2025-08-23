@@ -30,7 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'User Course Reports';
 $string['usercoursereports'] = 'User Course Reports';
-$string['usereports'] = 'User Reports';
+$string['userreports'] = 'User Reports';
 $string['coursereports'] = 'Course Reports';
 $string['showingreportdatanumber'] = 'Showing {$a->datafrom}-{$a->datato} data out of {$a->datatotal} data.';
 $string['usercoursereports:view'] = 'View User Course Reports';
