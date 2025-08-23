@@ -48,15 +48,18 @@ class filter_form extends \moodleform {
         $courseids = $this->_customdata['courseids'] ?? [];
         $roleids = $this->_customdata['roleids'] ?? [];
         $categoryids = $this->_customdata['categoryids'] ?? [];
-        $country = $this->_customdata['country'] ?? '';
         $courseformat = $this->_customdata['courseformat'] ?? '';
+        $enrolmethod = $this->_customdata['enrolmethod'] ?? '';
         $coursevisibility = $this->_customdata['coursevisibility'] ?? '';
         $createdfrom = (int)$this->_customdata['createdfrom'] ?? '';
         $createdto = (int)$this->_customdata['createdto'] ?? '';
+        $startdatefrom = (int)$this->_customdata['startdatefrom'] ?? '';
+        $startdateto = (int)$this->_customdata['startdateto'] ?? '';
+        $perpage = (int)$this->_customdata['perpage'] ?? 50;
         $filterfieldwrapper_expanded = false;
         if (
-            ($type == 'course' &&  ($search || $categoryids || $courseformat || $coursevisibility || $createdfrom || $createdto)) ||
-            ($type == 'user' &&  ($search || $courseids || $roleids || $country))
+            ($type == 'course' &&  ($search || $categoryids || $courseformat || $coursevisibility || $enrolmethod || $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
+            ($type == 'user' &&  ($search || $courseids || $roleids || $perpage))
         ) {
             $filterfieldwrapper_expanded = true;
         }
@@ -73,7 +76,7 @@ class filter_form extends \moodleform {
         $mform->setType('search', PARAM_TEXT);
         $mform->setDefault('search', $search);
 
-
+        // ... user report filter
         if ($type == 'user') {
             // ... course id search.
             $mform->addElement(
@@ -94,7 +97,7 @@ class filter_form extends \moodleform {
                 'autocomplete',
                 'roleids',
                 get_string('roles'),
-                \report_usercoursereports\user_data_handler::get_all_roles(),
+                \report_usercoursereports\user_data_handler::get_all_roles(0, [7, 8]),
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allroles'),
@@ -104,15 +107,15 @@ class filter_form extends \moodleform {
             $mform->setType('roleids', PARAM_INT);
             $mform->setDefault('roleids', $roleids);
 
-            // Country filter.
-            $countries = get_string_manager()->get_list_of_countries();
-            $countryoptions = ['' => get_string('allcountries', 'report_usercoursereports')] + $countries;
-            $mform->addElement('select', 'country', get_string('country'), $countryoptions, ['class' => 'usercoursereports-filter-field']);
-            $mform->setType('country', PARAM_TEXT);
-            $mform->setDefault('country', $country);
+            // // Country filter.
+            // $countries = get_string_manager()->get_list_of_countries();
+            // $countryoptions = ['' => get_string('allcountries', 'report_usercoursereports')] + $countries;
+            // $mform->addElement('select', 'country', get_string('country'), $countryoptions, ['class' => 'usercoursereports-filter-field']);
+            // $mform->setType('country', PARAM_TEXT);
+            // $mform->setDefault('country', $country);
         }
 
-
+        /// ... course report filter
         if ($type == 'course') {
             // Course category id search.
             $mform->addElement(
@@ -149,23 +152,62 @@ class filter_form extends \moodleform {
             $mform->setType('coursevisibility', PARAM_TEXT);
             $mform->setDefault('coursevisibility', $coursevisibility);
 
-            // Created from date.
-            $mform->addElement('date_selector', 'createdfrom', get_string('coursecreatedfrom', 'report_usercoursereports'), [
-                'optional' => true,
-            ]);
+            // --- Start date group.
+            $startdategroup = [];
+            $startdategroup[] = $mform->createElement('date_selector', 'startdatefrom', '', ['optional' => true]);
+            $startdategroup[] = $mform->createElement('date_selector', 'startdateto', '', ['optional' => true]);
+            $mform->addGroup(
+                $startdategroup,
+                'startdategroup',
+                get_string('coursestartdatefromto', 'report_usercoursereports'),
+                null,
+                false
+            );
+            $mform->setType('startdatefrom', PARAM_INT);
+            $mform->setDefault('startdatefrom', $startdatefrom);
+            $mform->setType('startdateto', PARAM_INT);
+            $mform->setDefault('startdateto', $startdateto);
+            $mform->getElement('startdategroup')->setAttributes(['class' => 'usercoursereports-filter-field']);
+
+            // ... created date group.
+            $createddategroup = [];
+            $createddategroup[] = $mform->createElement('date_selector', 'createdfrom', '', ['optional' => true]);
+            $createddategroup[] = $mform->createElement('date_selector', 'createdto', '', ['optional' => true]);
+            $mform->addGroup(
+                $createddategroup,
+                'createddategroup',
+                get_string('coursecreateddatefromto', 'report_usercoursereports'),
+                null,
+                false
+            );
             $mform->setType('createdfrom', PARAM_INT);
-            $mform->getElement('createdfrom')->setAttributes(['class' => 'usercoursereports-filter-field']);
             $mform->setDefault('createdfrom', $createdfrom);
-
-
-            // Created to date.
-            $mform->addElement('date_selector', 'createdto', get_string('coursecreatedto', 'report_usercoursereports'), [
-                'optional' => true,
-            ]);
             $mform->setType('createdto', PARAM_INT);
-            $mform->getElement('createdto')->setAttributes(['class' => 'usercoursereports-filter-field']);
             $mform->setDefault('createdto', $createdto);
+            $mform->getElement('createddategroup')->setAttributes(['class' => 'usercoursereports-filter-field']);
+
+            // ... Enrollment method
+            $enabled_plugins = enrol_get_plugins(true);
+            $enrol_options = ['all' => get_string('all'),];
+            foreach ($enabled_plugins as $pluginname => $plugin) {
+                $enrol_options[$pluginname] = $plugin->get_name();
+            }
+            // Enrolment method dropdown.
+            $mform->addElement('select', 'enrolmethod', get_string('enrolmentmethods', 'report_usercoursereports'), $enrol_options, ['class' => 'usercoursereports-filter-field']);
+            $mform->setType('enrolmethod', PARAM_TEXT);
+            $mform->setDefault('enrolmethod', $enrolmethod);
         }
+
+        // ... Per page number input (max 1000).
+        $mform->addElement('text', 'perpage', get_string('perpage', 'report_usercoursereports'), [
+            'min' => 1,
+            'max' => 1000,
+            'size' => 25,
+            'class' => 'usercoursereports-filter-field',
+        ]);
+        $mform->setType('perpage', PARAM_INT);
+        $mform->setDefault('perpage', $perpage ?: 50);
+
         // Close two-column grid
         $mform->addElement('html', '</div>');
 
@@ -186,12 +228,22 @@ class filter_form extends \moodleform {
     public function validation($data, $files) {
 
         $errors = parent::validation($data, $files);
-
-        // Ensure "from" date is not greater than "to" date.
+        // Ensure perpage date is between 1-100
+        if (!empty($data['perpage']) && ($data['perpage'] < 1 || $data['perpage'] > 1000)) {
+            $errors['perpage'] = get_string('invalidperpage', 'report_usercoursereports');
+        }
+        // Ensure created "from" date is not greater than create "to" date.
         if (!empty($data['createdfrom']) && !empty($data['createdto'])) {
             if ($data['createdfrom'] > $data['createdto']) {
                 $errors['createdfrom'] = get_string('invalidcreatedfromdate', 'report_usercoursereports');
                 $errors['createdto'] = get_string('invalidcreatedtodate', 'report_usercoursereports');
+            }
+        }
+        // Ensure start "from" date is not greater than start "to" date.
+        if (!empty($data['startdatefrom']) && !empty($data['startdateto'])) {
+            if ($data['startdatefrom'] > $data['startdateto']) {
+                $errors['startdatefrom'] = get_string('invalidstartdatefrom', 'report_usercoursereports');
+                $errors['startdateto'] = get_string('invalidstartdateto', 'report_usercoursereports');
             }
         }
 

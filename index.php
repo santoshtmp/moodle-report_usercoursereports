@@ -51,8 +51,11 @@ $parameters = [
     'perpage'           => optional_param('perpage', 0, PARAM_INT),
     'courseformat'      => optional_param('courseformat', '', PARAM_TEXT),
     'coursevisibility'  => optional_param('coursevisibility', '', PARAM_TEXT),
+    'enrolmethod'       => optional_param('enrolmethod', '', PARAM_TEXT),
     'createdfrom'       => optional_param('createdfrom', 0, PARAM_INT),
     'createdto'         => optional_param('createdto', 0, PARAM_INT),
+    'startdatefrom'     => optional_param('startdatefrom', 0, PARAM_INT),
+    'startdateto'       => optional_param('startdateto', 0, PARAM_INT),
     'download'          => optional_param('download', 0, PARAM_INT),
     'categoryids'       => optional_param_array('categoryids', 0, PARAM_INT),
     'courseids'         => optional_param_array('courseids', 0, PARAM_INT),
@@ -64,7 +67,7 @@ $pagepath       = '/report/usercoursereports/index.php';
 $urlparams      = usercoursereports::urlparam($parameters);
 $pageurl        = new moodle_url($pagepath, $urlparams);
 $redirecturl    = new moodle_url($pagepath, ['type' => $type]);
-$page_title     = 'usercoursereports-' . $type;
+$page_title     = get_string('pluginname', 'report_usercoursereports');
 
 // setup page information.
 $PAGE->set_context($context);

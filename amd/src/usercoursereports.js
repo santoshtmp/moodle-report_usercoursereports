@@ -59,6 +59,13 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                     }
                 });
             }
+            // error message priint when status is false.
+            if (!response.status && response.message) {
+                $('#error-response-message').remove();
+                $('#' + filter_area_id).prepend(
+                    '<p id="error-response-message" class="invalid-feedback" style="display:block;">' + response.message + '</p>'
+                );
+            }
         });
         ajaxrequest.fail(function (response) {
             window.console.log(response);
@@ -77,6 +84,9 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function () {
                 $(this).removeClass('col-md-3 col-md-9');
             });
+
+            // Change per page field type from text to number
+            document.getElementById('id_perpage').setAttribute('type', 'number');
 
             // On form submit
             $('#usercoursereports-filter').on('submit', function (e) {

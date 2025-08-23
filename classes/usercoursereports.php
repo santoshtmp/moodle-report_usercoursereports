@@ -47,7 +47,7 @@ class usercoursereports {
     public static function urlparam($parameters) {
         $urlparam = [];
         $skipparam = ['applyfilter', 'clearfilter', 'sesskey', 'mform_isexpanded_id_filterfieldwrapper', '_qf__report_usercoursereports_form_filter_form'];
-        $skipallparam = ['courseformat', 'coursevisibility'];
+        $skipallparam = ['courseformat', 'coursevisibility', 'enrolmethod'];
         foreach ($parameters as $key => $value) {
             if (in_array($key, $skipparam) || (in_array($key, $skipallparam) && $value == 'all')) {
                 continue;
@@ -101,7 +101,7 @@ class usercoursereports {
      */
     public static function get_course_info_table($pageurl, $parameters) {
         global $OUTPUT;
-        $perpage = ($parameters['perpage']) ?: 20;
+        $perpage = ($parameters['perpage']) ?: 50;
         $allcourseinfo = course_data_handler::get_all_course_info($parameters);
         $strdata = new stdClass();
         $strdata->datafrom = $allcourseinfo['meta']['datafrom'];
@@ -130,6 +130,7 @@ class usercoursereports {
                 html_writer::tag('th', get_string('courseformat', 'report_usercoursereports')) .
                 html_writer::tag('th', get_string('coursevisibility', 'report_usercoursereports')) .
                 html_writer::tag('th', get_string('enrolmentmethods', 'report_usercoursereports')) .
+                html_writer::tag('th', get_string('startdateto', 'report_usercoursereports')) .
                 html_writer::tag('th', get_string('createddate', 'report_usercoursereports'))
         );
         $contents .= html_writer::end_tag('thead');
@@ -178,6 +179,7 @@ class usercoursereports {
                     ['style' => 'list-style: none; padding-left: 0; margin: 0;'],
                 )
             );
+            $contents .= html_writer::tag('td', $course['course_startdate']);
             $contents .= html_writer::tag('td', $course['course_timecreated']);
             $contents .= html_writer::end_tag('tr');
         }
@@ -203,7 +205,7 @@ class usercoursereports {
     public static function get_user_info_table($pageurl, $parameters) {
         global $OUTPUT;
         // 
-        $perpage = ($parameters['perpage']) ?: 20;
+        $perpage = ($parameters['perpage']) ?: 50;
         $alluserinfo = user_data_handler::get_all_user_info($parameters);
         $strdata = new stdClass();
         $strdata->datafrom = $alluserinfo['meta']['datafrom'];
@@ -229,7 +231,7 @@ class usercoursereports {
                 html_writer::tag('th', get_string('email')) .
                 html_writer::tag('th', get_string('city')) .
                 html_writer::tag('th', get_string('roles')) .
-                html_writer::tag('th', get_string('courses')) .
+                html_writer::tag('th', get_string('enrolledcourses', 'report_usercoursereports')) .
                 html_writer::tag('th', get_string('lastaccess', 'report_usercoursereports'))
         );
         $contents .= html_writer::end_tag('thead');

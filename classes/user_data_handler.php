@@ -218,12 +218,12 @@ class user_data_handler {
      * @param int $user user id
      * @return array or boolen 
      */
-    public static function get_user_info($user_id, $timestamp = true) {
+    public static function get_user_info($userid, $timestamp = true) {
         global $DB;
         $userinfo = [];
 
-        if ($DB->record_exists('user', array('id' => $user_id))) {
-            $user = $DB->get_record('user', ['id' => $user_id]);
+        if ($DB->record_exists('user', array('id' => $userid))) {
+            $user = $DB->get_record('user', ['id' => $userid]);
             // default time zone
             $default_timezone = get_config('moodle', 'timezone');
             // users interests tags
@@ -286,7 +286,7 @@ class user_data_handler {
      *     Optional. An array of filter and pagination options.
      *
      *     @type int    $page        Page number for pagination (default 0).
-     *     @type int    $perpage     Number of records per page (default 20).
+     *     @type int    $perpage     Number of records per page (default 50).
      *     @type int    $id          User ID filter (default 0).
      *     @type string $search      Search keyword for users (default '').
      *     @type array  $courseids   Course IDs filter (default []).
@@ -299,86 +299,102 @@ class user_data_handler {
      */
     public static function get_all_user_info($parameters) {
 
-        global $DB;
+        global $CFG, $DB;
         $alluserinfo = [];
         // ... get parameter
-
         $pagenumber = $parameters['page'] ?? 0;
-        $perpage = $parameters['perpage'] ?? 20;
-        $user_id = $parameters['id'] ?? 0;
-        $search_user = $parameters['search'] ?? '';
-        $courseids = $parameters['courseids'] ?? [];
+        $perpage = $parameters['perpage'] ?? 0;
+        $userid = $parameters['id'] ?? 0;
+        $searchuser = $parameters['search'] ?? '';
         $roleids = $parameters['roleids'] ?? [];
-        $createdfrom = (int)$parameters['createdfrom'] ?? 0;
-        $createdto = (int)$parameters['createdto'] ?? 0;
+        $courseids = $parameters['courseids'] ?? [];
 
-        // 
+        // ... default search params
         $limitfrom = 0;
-        $perpage = ($perpage) ?: 20;
+        $perpage = ($perpage) ?: 50;
         $limitnum = ($perpage > 0) ? $perpage : 0;
         if ($pagenumber > 0) {
             $limitfrom = $limitnum * $pagenumber;
         }
-        // 
-        $query_join_apply = '';
-        $query_join = [];
-        $sql_params = [
+        $queryjoinapply = '';
+        $queryjoin = [];
+        $sqlparams = [
             'guest_user_id' => 1,
             'user_deleted' => 1,
             'user_suspended' => 1,
         ];
-        $where_condition = [];
-        $where_condition_apply = " WHERE u.id <> :guest_user_id AND u.deleted <> :user_deleted AND u.suspended <> :user_suspended";
-        // 
-        if ($search_user) {
-            $sql_params['search_username'] = "%" . $search_user . "%";
-            $sql_params['search_firstname'] = "%" . $search_user . "%";
-            $sql_params['search_lastname'] = "%" . $search_user . "%";
-            $sql_params['search_email'] = "%" . $search_user . "%";
-            $where_condition[] = '( u.username LIKE :search_username || u.firstname LIKE :search_firstname || u.lastname LIKE :search_lastname || u.email LIKE :search_email )';
+        $wherecondition = [];
+        $whereconditionapply = "WHERE u.id <> :guest_user_id AND u.deleted <> :user_deleted AND u.suspended <> :user_suspended";
+        // ... search by text
+        if ($searchuser) {
+            $sqlparams['search_username'] = "%" . $searchuser . "%";
+            $sqlparams['search_firstname'] = "%" . $searchuser . "%";
+            $sqlparams['search_lastname'] = "%" . $searchuser . "%";
+            $sqlparams['search_email'] = "%" . $searchuser . "%";
+            $wherecondition[] = '( u.username LIKE :search_username || u.firstname LIKE :search_firstname || u.lastname LIKE :search_lastname || u.email LIKE :search_email )';
         }
-        if ($user_id) {
-            $sql_params['user_id'] = $user_id;
-            $where_condition[] = 'u.id = :user_id';
+        // ... search by id
+        if ($userid) {
+            $sqlparams['user_id'] = $userid;
+            $wherecondition[] = 'u.id = :user_id';
         }
+        // ... search by role ids
         if (is_array($roleids) && count($roleids) > 0) {
+            $rolewherecondition = [];
+            // ... check if admin is present in roleids
             if (in_array(-1, $roleids)) {
-                $admin_role = true;
+                $adminids = explode(',', $CFG->siteadmins);
+                if (count($adminids) > 0) {
+                    list($insql, $inparams) = $DB->get_in_or_equal($adminids, SQL_PARAMS_NAMED, 'adminids');
+                    $sqlparams = array_merge($sqlparams, $inparams);
+                    $rolewherecondition[] = "u.id $insql";
+                }
             }
-            // Remove 0 and -1 values.
+            // ... remove dummy role ids: 0 and -1 values.
             $roleids = array_filter($roleids, function ($value) {
                 return $value !== -1 && $value !== 0;
             });
-            // now if there are more roles then process further
+            // ... now again if there are real roles user roles
             if (count($roleids) > 0) {
-                $sql_params['roleids'] = implode(',', $roleids);
-                $where_condition[] = 'ra.roleid IN (:roleids)';
-                $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
+                $queryjoin['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
+                list($insql, $inparams) = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
+                $sqlparams = array_merge($sqlparams, $inparams);
+                $rolewherecondition[] = "ra.roleid $insql";
             }
-            // var_dump($sql_params['roleids']);
-            // var_dump($roleids);
+            // ... join the role condition with OR
+            if (count($rolewherecondition) > 0) {
+                $wherecondition[] = "(" . implode(" OR ", $rolewherecondition) . ")";
+            }
         }
+        // ... search by course ids
         if (is_array($courseids) && count($courseids) > 0) {
-            $sql_params['courseids'] = implode(',', $courseids);
-            $sql_params['contextlevel'] = CONTEXT_COURSE;
-            $where_condition[] = 'ctx.instanceid IN (:courseids)';
-            $where_condition[] = 'ctx.contextlevel = :contextlevel';
-            $query_join['role_assignments'] = "INNER JOIN {role_assignments} AS ra ON u.id = ra.userid";
-            $query_join['context'] = "INNER JOIN {context} AS ctx ON ra.contextid = ctx.id";
+
+            $queryjoin['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
+            $queryjoin['context'] = "INNER JOIN {context} ctx ON ra.contextid = ctx.id";
+
+            $sqlparams['contextlevel'] = CONTEXT_COURSE;
+            $wherecondition[] = 'ctx.contextlevel = :contextlevel';
+
+            list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'courseids');
+            $sqlparams = array_merge($sqlparams, $inparams);
+            $wherecondition[] = "ctx.instanceid $insql";
         }
-        // 
-        if (count($where_condition) > 0) {
-            $where_condition_apply .= " AND " . implode(" AND ", $where_condition);
+        // ... join all conditions by AND 
+        if (count($wherecondition) > 0) {
+            $whereconditionapply .= " AND " . implode(" AND ", $wherecondition);
         }
-        if (count($query_join) > 0) {
-            $query_join_apply .= " " . implode(" ", $query_join);
+        // ... query join all extra tables 
+        if (count($queryjoin) > 0) {
+            $queryjoinapply .= " " . implode(" ", $queryjoin);
         }
-        // 
-        $sql_query = 'SELECT DISTINCT u.id FROM {user} AS u' . $query_join_apply . $where_condition_apply . ' ORDER BY u.id DESC ';
-        // 
-        $records = $DB->get_records_sql($sql_query, $sql_params, $limitfrom, $limitnum);
-        $total_records = $DB->get_records_sql($sql_query, $sql_params);
-        // count_records_sql
+
+        // ... final sql query and execute
+        $sqlquery = 'SELECT DISTINCT u.id FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.id DESC ';
+        $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
+
+        // ... count total records
+        $sqlquery = 'SELECT COUNT(DISTINCT u.id) FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.id DESC ';
+        $totalrecords = $DB->count_records_sql($sqlquery, $sqlparams);
 
         //create return value
         $datadisplaycount = $limitfrom;
@@ -390,8 +406,8 @@ class user_data_handler {
         }
         // meta information
         $alluserinfo['meta'] = [
-            'totalrecords' => count($total_records),
-            'totalpage' => ceil(count($total_records) / $perpage),
+            'totalrecords' => $totalrecords,
+            'totalpage' => ceil($totalrecords / $perpage),
             'pagenumber' => $pagenumber,
             'perpage' => $perpage,
             'datadisplaycount' => $datadisplaycount,
@@ -404,42 +420,47 @@ class user_data_handler {
 
     /**
      * User roles
+     * @param int $userid
+     * @param array $excluderoleids
+     * @return array
      */
-    public static function get_all_roles($user_id = 0) {
+    public static function get_all_roles($userid = 0, $excluderoleids = []) {
         global $DB;
-        $roles_data = [];
+        $rolesdata = [];
 
-        if ($user_id) {
-            $sql = "SELECT r.*
+        if ($userid) {
+            $sql = "SELECT DISTINCT r.*
             FROM {role_assignments} ra
             JOIN {role} r ON ra.roleid = r.id
             WHERE ra.userid = ?";
 
-            $params = [$user_id];
+            $params = [$userid];
             $roles = $DB->get_records_sql($sql, $params);
             foreach ($roles as $key => $role) {
-                $roles_data[] = [
+                $rolesdata[] = [
                     'id' => $role->id,
                     'shortname' => $role->shortname,
                     'name' => $role->name ?: role_get_name($role)
                 ];
             }
-            if (is_siteadmin($user_id)) {
-                $roles_data[] = ['id' => '-1', 'shortname' => 'admin', 'name' => get_string('admin')];
+            if (is_siteadmin($userid)) {
+                $rolesdata[] = ['id' => '-1', 'shortname' => 'admin', 'name' => get_string('admin')];
             }
-            return $roles_data;
+            return $rolesdata;
         }
         // Get all roles.
-        $roles_data = [
-            '0' => get_string('allroles', 'report_usercoursereports'),
+        $rolesdata = [
             '-1' => get_string('admin')
         ];
 
         $allrole = $DB->get_records('role');
         foreach ($allrole as $key => $role) {
-            $roles_data[$role->id] = role_get_name($role);
+            if (in_array($role->id, $excluderoleids)) {
+                continue;
+            }
+            $rolesdata[$role->id] = role_get_name($role);
         }
-        return $roles_data;
+        return $rolesdata;
     }
     // END.
 }
