@@ -29,10 +29,12 @@ use report_usercoursereports\usercoursereports;
 
 // Get require config file.
 require_once(dirname(__FILE__) . '/../../config.php');
+require_once($CFG->libdir . '/adminlib.php');
 defined('MOODLE_INTERNAL') || die();
 
 // Access checks and Capability check.
 require_login(null, false);
+admin_externalpage_setup('report_usercoursereports');
 $context = \context_system::instance();
 if (!has_capability('report/usercoursereports:view', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
