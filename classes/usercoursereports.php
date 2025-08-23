@@ -15,7 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package   report_usercoursereports   
+ * User course reports handler class.
+ *
+ * @package   report_usercoursereports
  * @copyright 2025 https://santoshmagar.com.np/
  * @author    santoshtmp7
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -27,10 +29,8 @@ use html_writer;
 use moodle_url;
 use stdClass;
 
-defined('MOODLE_INTERNAL') || die;
-
 /**
- * class handler to get report table
+ * Handles generating reports for users and courses.
  *
  * @package    report_usercoursereports
  * @copyright  2025 santoshtmp <https://santoshmagar.com.np/>
@@ -40,13 +40,23 @@ defined('MOODLE_INTERNAL') || die;
 class usercoursereports {
 
     /**
-     * Set parameters
-     * @param
-     * @return array
+     * Process and filter URL parameters for report links.
+     *
+     * Skips system-related params (sesskey, form states, etc.) and
+     * ignores values set to "all" for specific filters.
+     *
+     * @param array $parameters Key-value array of request parameters.
+     * @return array Cleaned parameters to be appended to URLs.
      */
     public static function urlparam($parameters) {
         $urlparam = [];
-        $skipparam = ['applyfilter', 'clearfilter', 'sesskey', 'mform_isexpanded_id_filterfieldwrapper', '_qf__report_usercoursereports_form_filter_form'];
+        $skipparam = [
+            'applyfilter',
+            'clearfilter',
+            'sesskey',
+            'mform_isexpanded_id_filterfieldwrapper',
+            '_qf__report_usercoursereports_form_filter_form',
+        ];
         $skipallparam = ['courseformat', 'coursevisibility', 'enrolmethod'];
         foreach ($parameters as $key => $value) {
             if (in_array($key, $skipparam) || (in_array($key, $skipallparam) && $value == 'all')) {
@@ -65,9 +75,15 @@ class usercoursereports {
     }
 
     /**
-     * Get Report List 
+     * Render the report type switcher list.
+     *
+     * Displays toggle buttons to switch between course and user reports.
+     *
+     * @param string $type Current report type ('course' or 'user').
+     * @param string $pagepath The base page path for navigation.
+     * @return string HTML output of the report switcher.
      */
-    public static function get_report_list($type, $page_path) {
+    public static function get_report_list($type, $pagepath) {
         $contents = '';
         $contents .= html_writer::start_tag(
             'div',
@@ -78,12 +94,12 @@ class usercoursereports {
             ['class' => 'list-wrapper d-flex gap-3', 'style' => 'gap:10px']
         );
         $contents .= html_writer::link(
-            new moodle_url($page_path, ['type' => 'course']),
+            new moodle_url($pagepath, ['type' => 'course']),
             get_string('coursereports', 'report_usercoursereports'),
             ['class' => ($type == 'course') ? 'active btn btn-primary' : 'btn btn-secondary']
         );
         $contents .= html_writer::link(
-            new moodle_url($page_path, ['type' => 'user']),
+            new moodle_url($pagepath, ['type' => 'user']),
             get_string('userreports', 'report_usercoursereports'),
             ['class' => ($type == 'user') ? 'active btn btn-primary' : 'btn btn-secondary']
         );
@@ -94,10 +110,13 @@ class usercoursereports {
     }
 
     /**
-     * Get course.
+     * Generate a table of courses with metadata and filters applied.
      *
-     * @param string $page_path
-     * @return string
+     * Fetches course data and renders a paginated table.
+     *
+     * @param moodle_url $pageurl Current page URL for pagination links.
+     * @param array $parameters Filter and paging parameters.
+     * @return string HTML output of the course report table.
      */
     public static function get_course_info_table($pageurl, $parameters) {
         global $OUTPUT;
@@ -107,9 +126,9 @@ class usercoursereports {
         $strdata->datafrom = $allcourseinfo['meta']['datafrom'];
         $strdata->datato = $allcourseinfo['meta']['datato'];
         $strdata->datatotal = $allcourseinfo['meta']['totalrecords'];
-        // 
         $contents = '';
-        // Display the form.
+
+        // Display the filter area content.
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
             'usercoursereports-filter-type' => $parameters['type'],
@@ -134,11 +153,9 @@ class usercoursereports {
                 html_writer::tag('th', get_string('createddate', 'report_usercoursereports'))
         );
         $contents .= html_writer::end_tag('thead');
-
         $contents .= html_writer::start_tag('tbody', ['data-type' => 'course-report']);
-
         foreach ($allcourseinfo['data'] as $course) {
-            // output item row
+            // ... output item row
             $contents .= html_writer::start_tag(
                 'tr',
                 [
@@ -191,28 +208,35 @@ class usercoursereports {
             $perpage,
             $pageurl
         );
-        $contents .= html_writer::tag('div', $OUTPUT->render_from_template("core/loading", []), ['id' => 'filter-loading-wrapper', 'style' => 'display:none;']);
+        $contents .= html_writer::tag('div', $OUTPUT->render_from_template("core/loading", []), [
+            'id' => 'filter-loading-wrapper',
+            'style' => 'display:none;',
+        ]);
         $contents .= html_writer::end_tag('div');
 
         return $contents;
     }
+
     /**
-     * Get users.
+     * Generate a table of users with metadata and filters applied.
      *
-     * @param string $page_path
-     * @return string
+     * Fetches user data and renders a paginated table.
+     *
+     * @param moodle_url $pageurl Current page URL for pagination links.
+     * @param array $parameters Filter and paging parameters.
+     * @return string HTML output of the user report table.
      */
     public static function get_user_info_table($pageurl, $parameters) {
         global $OUTPUT;
-        // 
         $perpage = ($parameters['perpage']) ?: 50;
         $alluserinfo = user_data_handler::get_all_user_info($parameters);
         $strdata = new stdClass();
         $strdata->datafrom = $alluserinfo['meta']['datafrom'];
         $strdata->datato = $alluserinfo['meta']['datato'];
         $strdata->datatotal = $alluserinfo['meta']['totalrecords'];
-        // 
         $contents = '';
+
+        // Display the filter area content.
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
             'usercoursereports-filter-type' => $parameters['type'],
@@ -235,11 +259,9 @@ class usercoursereports {
                 html_writer::tag('th', get_string('lastaccess', 'report_usercoursereports'))
         );
         $contents .= html_writer::end_tag('thead');
-
         $contents .= html_writer::start_tag('tbody', ['data-type' => 'user-report']);
-
         foreach ($alluserinfo['data'] as $user) {
-            // output item row
+            // ... output item row
             $contents .= html_writer::start_tag(
                 'tr',
                 [
@@ -255,7 +277,7 @@ class usercoursereports {
                     html_writer::img(
                         $user['profileimage_link'],
                         $user['fullname'],
-                        ['class' => 'user-thumbnail',]
+                        ['class' => 'user-thumbnail']
                     ) .
                         html_writer::tag(
                             'div',
@@ -288,7 +310,10 @@ class usercoursereports {
             $perpage,
             $pageurl
         );
-        $contents .= html_writer::tag('div', $OUTPUT->render_from_template("core/loading", []), ['id' => 'filter-loading-wrapper', 'style' => 'display:none;']);
+        $contents .= html_writer::tag('div', $OUTPUT->render_from_template("core/loading", []), [
+            'id' => 'filter-loading-wrapper',
+            'style' => 'display:none;',
+        ]);
         $contents .= html_writer::end_tag('div');
 
         return $contents;

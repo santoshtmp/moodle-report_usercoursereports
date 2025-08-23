@@ -86,7 +86,9 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             });
 
             // Change per page field type from text to number
-            document.getElementById('id_perpage').setAttribute('type', 'number');
+            if (document.getElementById('id_perpage')) {
+                document.getElementById('id_perpage').setAttribute('type', 'number');
+            }
 
             // On form submit
             $('#usercoursereports-filter').on('submit', function (e) {

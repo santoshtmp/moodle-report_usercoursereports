@@ -21,12 +21,13 @@
  * @copyright  2025 https://santoshmagar.com.np/
  * @author     santoshtmp7 https://github.com/santoshtmp/moodle-report_usercoursereports
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * 
+ *
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-if ($hassiteconfig) { // Needs this condition or there is error on login page.
+// Needs this condition or there is error on login page.
+if ($hassiteconfig) {
     $ADMIN->add(
         'reports',
         new admin_externalpage(

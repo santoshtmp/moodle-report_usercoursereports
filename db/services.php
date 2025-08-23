@@ -33,7 +33,6 @@ $functions = [
         'description' => 'Get User/Course report table via API',
         'type'        => 'read',
         'ajax'        => true,
-        'capabilities'=> 'report/usercoursereports:view',
+        'capabilities' => 'report/usercoursereports:view',
     ],
 ];
-
