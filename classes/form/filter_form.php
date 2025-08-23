@@ -61,14 +61,14 @@ class filter_form extends \moodleform {
         $startdateto = (int)$this->_customdata['startdateto'] ?? '';
         $perpage = (int)$this->_customdata['perpage'] ?? 50;
         $filterfieldwrapperexpanded = false;
-        // if (
-        //     ($type == 'course' &&  ($search ||
-        //         $categoryids || $courseformat || $coursevisibility || $enrolmethod ||
-        //         $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
-        //     ($type == 'user' &&  ($search || $courseids || $roleids || $perpage))
-        // ) {
-        //     $filterfieldwrapperexpanded = true;
-        // }
+        if (
+            ($type == 'course' &&  ($search ||
+                $categoryids || $courseformat || $coursevisibility || $enrolmethod ||
+                $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
+            ($type == 'user' &&  ($search || $courseids || $roleids || $perpage))
+        ) {
+            $filterfieldwrapperexpanded = true;
+        }
 
         // ... header
         $mform->addElement('header', 'filterfieldwrapper', get_string($type . 'filter', 'report_usercoursereports'));

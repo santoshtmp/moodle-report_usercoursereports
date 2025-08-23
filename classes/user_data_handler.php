@@ -400,7 +400,8 @@ class user_data_handler {
         }
 
         // ... final sql query and execute
-        $sqlquery = 'SELECT DISTINCT u.id FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
+        $sqlquery = 'SELECT DISTINCT u.id
+                    FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
