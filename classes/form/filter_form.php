@@ -15,7 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package   report_usercoursereports   
+ * usercoursereports filter form
+ * @package   report_usercoursereports
  * @copyright 2025 https://santoshmagar.com.np/
  * @author    santoshtmp7
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -32,8 +33,11 @@ require_once($CFG->libdir . '/formslib.php');
 /**
  * filter form.
  *
- * @package    report_usercoursereports
- * @copyright  
+ * @package   report_usercoursereports
+ * @copyright 2025 https://santoshmagar.com.np/
+ * @author    santoshtmp7
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
  */
 class filter_form extends \moodleform {
 
@@ -56,17 +60,19 @@ class filter_form extends \moodleform {
         $startdatefrom = (int)$this->_customdata['startdatefrom'] ?? '';
         $startdateto = (int)$this->_customdata['startdateto'] ?? '';
         $perpage = (int)$this->_customdata['perpage'] ?? 50;
-        $filterfieldwrapper_expanded = false;
-        if (
-            ($type == 'course' &&  ($search || $categoryids || $courseformat || $coursevisibility || $enrolmethod || $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
-            ($type == 'user' &&  ($search || $courseids || $roleids || $perpage))
-        ) {
-            $filterfieldwrapper_expanded = true;
-        }
+        $filterfieldwrapperexpanded = false;
+        // if (
+        //     ($type == 'course' &&  ($search ||
+        //         $categoryids || $courseformat || $coursevisibility || $enrolmethod ||
+        //         $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
+        //     ($type == 'user' &&  ($search || $courseids || $roleids || $perpage))
+        // ) {
+        //     $filterfieldwrapperexpanded = true;
+        // }
 
         // ... header
         $mform->addElement('header', 'filterfieldwrapper', get_string($type . 'filter', 'report_usercoursereports'));
-        $mform->setExpanded('filterfieldwrapper', $filterfieldwrapper_expanded);
+        $mform->setExpanded('filterfieldwrapper', $filterfieldwrapperexpanded);
 
         // ... start filter form grid in two column.
         $mform->addElement('html', '<div class="filter-grid">');
@@ -86,7 +92,7 @@ class filter_form extends \moodleform {
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allcourses', 'report_usercoursereports'),
-                    'class' => 'usercoursereports-filter-field'
+                    'class' => 'usercoursereports-filter-field',
                 ]
             );
             $mform->setType('courseids', PARAM_INT);
@@ -101,21 +107,14 @@ class filter_form extends \moodleform {
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allroles'),
-                    'class' => 'usercoursereports-filter-field'
+                    'class' => 'usercoursereports-filter-field',
                 ]
             );
             $mform->setType('roleids', PARAM_INT);
             $mform->setDefault('roleids', $roleids);
-
-            // // Country filter.
-            // $countries = get_string_manager()->get_list_of_countries();
-            // $countryoptions = ['' => get_string('allcountries', 'report_usercoursereports')] + $countries;
-            // $mform->addElement('select', 'country', get_string('country'), $countryoptions, ['class' => 'usercoursereports-filter-field']);
-            // $mform->setType('country', PARAM_TEXT);
-            // $mform->setDefault('country', $country);
         }
 
-        /// ... course report filter
+        // ... course report filter
         if ($type == 'course') {
             // Course category id search.
             $mform->addElement(
@@ -126,7 +125,7 @@ class filter_form extends \moodleform {
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allcategories'),
-                    'class' => 'usercoursereports-filter-field'
+                    'class' => 'usercoursereports-filter-field',
                 ]
             );
             $mform->setType('categoryids', PARAM_INT);
@@ -138,7 +137,9 @@ class filter_form extends \moodleform {
             foreach ($formats as $formatname => $formatpath) {
                 $formatoptions[$formatname] = get_string('pluginname', "format_{$formatname}");
             }
-            $mform->addElement('select', 'courseformat', get_string('courseformat', 'report_usercoursereports'), $formatoptions, ['class' => 'usercoursereports-filter-field']);
+            $mform->addElement('select', 'courseformat', get_string('courseformat', 'report_usercoursereports'), $formatoptions, [
+                'class' => 'usercoursereports-filter-field',
+            ]);
             $mform->setType('courseformat', PARAM_TEXT);
             $mform->setDefault('courseformat', $courseformat);
 
@@ -148,11 +149,19 @@ class filter_form extends \moodleform {
                 'show' => get_string('show'),
                 'hide' => get_string('hide'),
             ];
-            $mform->addElement('select', 'coursevisibility', get_string('coursevisibility', 'report_usercoursereports'), $visibilityoptions, ['class' => 'usercoursereports-filter-field']);
+            $mform->addElement(
+                'select',
+                'coursevisibility',
+                get_string('coursevisibility', 'report_usercoursereports'),
+                $visibilityoptions,
+                [
+                    'class' => 'usercoursereports-filter-field',
+                ]
+            );
             $mform->setType('coursevisibility', PARAM_TEXT);
             $mform->setDefault('coursevisibility', $coursevisibility);
 
-            // --- Start date group.
+            // ... Start date group.
             $startdategroup = [];
             $startdategroup[] = $mform->createElement('date_selector', 'startdatefrom', '', ['optional' => true]);
             $startdategroup[] = $mform->createElement('date_selector', 'startdateto', '', ['optional' => true]);
@@ -187,13 +196,18 @@ class filter_form extends \moodleform {
             $mform->getElement('createddategroup')->setAttributes(['class' => 'usercoursereports-filter-field']);
 
             // ... Enrollment method
-            $enabled_plugins = enrol_get_plugins(true);
-            $enrol_options = ['all' => get_string('all'),];
-            foreach ($enabled_plugins as $pluginname => $plugin) {
-                $enrol_options[$pluginname] = $plugin->get_name();
+            $enroloptions = ['all' => get_string('all')];
+            foreach (enrol_get_plugins(true) as $pluginname => $plugin) {
+                $enroloptions[$pluginname] = $plugin->get_name();
             }
             // Enrolment method dropdown.
-            $mform->addElement('select', 'enrolmethod', get_string('enrolmentmethods', 'report_usercoursereports'), $enrol_options, ['class' => 'usercoursereports-filter-field']);
+            $mform->addElement(
+                'select',
+                'enrolmethod',
+                get_string('enrolmentmethods', 'report_usercoursereports'),
+                $enroloptions,
+                ['class' => 'usercoursereports-filter-field']
+            );
             $mform->setType('enrolmethod', PARAM_TEXT);
             $mform->setDefault('enrolmethod', $enrolmethod);
         }
@@ -208,14 +222,19 @@ class filter_form extends \moodleform {
         $mform->setType('perpage', PARAM_INT);
         $mform->setDefault('perpage', $perpage ?: 50);
 
-        // Close two-column grid
+        // Close two-column grid.
         $mform->addElement('html', '</div>');
 
         // Action btn.
         $buttonarray = [];
-        $buttonarray[] = &$mform->createElement('submit', 'applyfilter', get_string('applyfilter', 'report_usercoursereports'), ['id' => 'applyfilter', 'class' => 'apply-filter form-submit']);
-        $buttonarray[] = &$mform->createElement('cancel', '', get_string('clear'), ['id' => 'clearfilter']);
-        $mform->addGroup($buttonarray, 'buttonar', '', array(''), false);
+        $buttonarray[] = $mform->createElement(
+            'submit',
+            'applyfilter',
+            get_string('applyfilter', 'report_usercoursereports'),
+            ['id' => 'applyfilter', 'class' => 'apply-filter form-submit']
+        );
+        $buttonarray[] = $mform->createElement('cancel', '', get_string('clear'), ['id' => 'clearfilter']);
+        $mform->addGroup($buttonarray, 'buttonar', '', [''], false);
     }
 
     /**
@@ -228,7 +247,7 @@ class filter_form extends \moodleform {
     public function validation($data, $files) {
 
         $errors = parent::validation($data, $files);
-        // Ensure perpage date is between 1-100
+        // Ensure perpage date is between 1-100.
         if (!empty($data['perpage']) && ($data['perpage'] < 1 || $data['perpage'] > 1000)) {
             $errors['perpage'] = get_string('invalidperpage', 'report_usercoursereports');
         }

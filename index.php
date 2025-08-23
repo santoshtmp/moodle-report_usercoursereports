@@ -34,7 +34,7 @@ defined('MOODLE_INTERNAL') || die();
 
 // Access checks and Capability check.
 require_login(null, false);
-admin_externalpage_setup('report_usercoursereports');
+// admin_externalpage_setup('report_usercoursereports');
 $context = \context_system::instance();
 if (!has_capability('report/usercoursereports:view', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
@@ -64,21 +64,21 @@ $parameters = [
     'roleids'           => optional_param_array('roleids', 0, PARAM_INT),
 ];
 
-// Prepare the page information. 
+// Prepare the page information.
 $pagepath       = '/report/usercoursereports/index.php';
 $urlparams      = usercoursereports::urlparam($parameters);
 $pageurl        = new moodle_url($pagepath, $urlparams);
 $redirecturl    = new moodle_url($pagepath, ['type' => $type]);
-$page_title     = get_string('pluginname', 'report_usercoursereports');
+$pagetitle     = get_string('pluginname', 'report_usercoursereports');
 
-// setup page information.
+// Setup page information.
 $PAGE->set_context($context);
 $PAGE->set_url($pageurl);
 $PAGE->set_pagelayout('report');
 $PAGE->set_pagetype('report_usercoursereports');
 $PAGE->set_subpage((string)$type);
-$PAGE->set_title($page_title);
-$PAGE->set_heading($page_title);
+$PAGE->set_title($pagetitle);
+$PAGE->set_heading($pagetitle);
 $PAGE->add_body_class('report-usercoursereports');
 $PAGE->navbar->add(get_string($type . 'reports', 'report_usercoursereports'), $pageurl);
 $PAGE->requires->jquery();
@@ -93,7 +93,7 @@ $PAGE->requires->js_call_amd(
     ]
 );
 // Load filter.
-$filter_form = new filter_form(
+$filterform = new filter_form(
     $redirecturl,
     $parameters,
     'GET',
@@ -104,17 +104,17 @@ $filter_form = new filter_form(
         'data-usercoursereports-type' => $type,
     ]
 );
-if ($filter_form->is_cancelled()) {
+if ($filterform->is_cancelled()) {
     redirect($redirecturl);
 }
 
-//  Get the data and display.
+// Get the data and display.
 $contents = '';
 $contents .= usercoursereports::get_report_list($type, $pagepath);
-$contents .= $filter_form->render();
+$contents .= $filterform->render();
 if ($type == 'course') {
     $contents .= usercoursereports::get_course_info_table($pageurl, $parameters);
-} elseif ($type == 'user') {
+} else if ($type == 'user') {
     $contents .= usercoursereports::get_user_info_table($pageurl, $parameters);
 } else {
     $contents .= '<div> Please select the type.</div>';

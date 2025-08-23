@@ -15,8 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * user information.
- * @package   report_usercoursereports   
+ * User data handler for user course reports.
+ *
+ * @package   report_usercoursereports
  * @copyright  2025 https://santoshmagar.com.np/
  * @author    santoshtmp7
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -30,9 +31,6 @@ use core_tag_tag;
 use stdClass;
 use moodle_url;
 
-
-defined('MOODLE_INTERNAL') || die;
-
 /**
  * class handler to get user data
  *
@@ -44,15 +42,14 @@ defined('MOODLE_INTERNAL') || die;
 class user_data_handler {
 
     /**
-     * Returns List of courses where the user is enrolled
+     * Returns the list of courses where the user is enrolled.
      *
-     * @param \stdClass $user
-     *
-     * @return array
+     * @param stdClass $user User object.
+     * @return array List of enrolled courses with progress and roles.
      */
     public static function user_enrolled_courses($user) {
         $enrolledcourses = [];
-        if ($mycourses =  enrol_get_users_courses($user->id, false, '*', 'visible DESC, fullname ASC, sortorder ASC')) {
+        if ($mycourses = enrol_get_users_courses($user->id, false, '*', 'visible DESC, fullname ASC, sortorder ASC')) {
             foreach ($mycourses as $mycourse) {
                 if ($mycourse->category) {
                     $coursecontext = \context_course::instance($mycourse->id);
@@ -60,9 +57,9 @@ class user_data_handler {
 
                     $enrolledcourse = [
                         "id" => $mycourse->id,
-                        "fullname" => format_string($mycourse->fullname, true, array('context' => $coursecontext)),
-                        "shortname" => format_string($mycourse->shortname, true, array('context' => $coursecontext)),
-                        'course_link' => (new \moodle_url('/course/view.php', array('id' => $mycourse->id)))->out(),
+                        "fullname" => format_string($mycourse->fullname, true, ['context' => $coursecontext]),
+                        "shortname" => format_string($mycourse->shortname, true, ['context' => $coursecontext]),
+                        'course_link' => (new \moodle_url('/course/view.php', ['id' => $mycourse->id]))->out(),
                         "progress" => $percentage,
                         "completion_date" => ($percentage == 100) ? time() : "",
                         "enroll_date" => self::course_user_enrolments($mycourse->id, $user->id)->timecreated,
@@ -79,18 +76,18 @@ class user_data_handler {
                         }
                     }
 
-                    $course_user_roles = [];
+                    $courseuserroles = [];
                     $roles = get_user_roles($coursecontext, $user->id);
                     if ($roles && is_array($roles)) {
                         $count = 0;
                         foreach ($roles as $key => $role) {
-                            $course_user_roles[$count]['id'] = $role->id;
-                            $course_user_roles[$count]['shortname'] = $role->shortname;
-                            $course_user_roles[$count]['name'] = ($role->name) ?: $role->shortname;
+                            $courseuserroles[$count]['id'] = $role->id;
+                            $courseuserroles[$count]['shortname'] = $role->shortname;
+                            $courseuserroles[$count]['name'] = ($role->name) ?: $role->shortname;
                             $count++;
                         }
                     }
-                    $enrolledcourse['course_user_roles'] = $course_user_roles;
+                    $enrolledcourse['course_user_roles'] = $courseuserroles;
                     $enrolledcourses[] = $enrolledcourse;
                 }
             }
@@ -99,23 +96,26 @@ class user_data_handler {
     }
 
     /**
-     * return human readable date time
+     * Returns a human-readable date/time string.
+     *
+     * @param int $timestamp Unix timestamp.
+     * @param string $format Date format string (default: %b %d, %Y).
+     * @return string Formatted date/time string.
      */
     public static function get_user_date_time($timestamp, $format = '%b %d, %Y') {
-        // '%A, %b %d, %Y, %I:%M %p'
         $date = new \DateTime();
         $date->setTimestamp(intval($timestamp));
-        $user_date_time = userdate($date->getTimestamp(), $format);
-        return $user_date_time;
+        return userdate($date->getTimestamp(), $format);
     }
 
     /**
-     * return user progress in the course
-     * @param stdClass $course course      
-     * @param int $enrolled_user_id id of enrolled user in course
-     * @return int $percentage user course progress percentage
+     * Returns user progress percentage in a course.
+     *
+     * @param stdClass $course Course object.
+     * @param int $enrolleduserid User ID of enrolled user.
+     * @return int User course progress percentage (0–100).
      */
-    public static function get_user_course_progress($course, $enrolled_user_id) {
+    public static function get_user_course_progress($course, $enrolleduserid) {
         global $CFG;
 
         require_once("$CFG->libdir/completionlib.php");
@@ -123,9 +123,9 @@ class user_data_handler {
         $completioninfo = new \completion_info($course);
         $percentage = 0;
         if ($completioninfo->is_enabled()) {
-            $percentage = progress::get_course_progress_percentage($course, $enrolled_user_id);
+            $percentage = progress::get_course_progress_percentage($course, $enrolleduserid);
             if (!is_null($percentage)) {
-                $percentage =  (int)($percentage);
+                $percentage = (int)($percentage);
                 return $percentage;
             }
         }
@@ -133,30 +133,32 @@ class user_data_handler {
     }
 
     /**
-     * return user course enrollment infomation
-     * @param int $course_id course id     
-     * @param int $enrolled_user_id id of enrolled user in course
-     * @return object $userenrolments user course enrollment
+     * Returns user course enrolment information.
+     *
+     * @param int $courseid Course ID.
+     * @param int $enrolleduserid User ID of enrolled user.
+     * @return stdClass|null User enrolment record.
      */
-    public static function course_user_enrolments($course_id, $enrolled_user_id) {
+    public static function course_user_enrolments($courseid, $enrolleduserid) {
         global $DB;
         $query = 'SELECT user_enrolments.status, user_enrolments.timecreated ,enrol.enrol
-            FROM {user_enrolments} user_enrolments 
+            FROM {user_enrolments} user_enrolments
             LEFT JOIN {enrol} enrol ON user_enrolments.enrolid = enrol.id
             WHERE enrol.courseid = :courseid AND user_enrolments.userid = :userid
             ';
         $params = [
-            'courseid' => $course_id,
-            'userid' => $enrolled_user_id
+            'courseid' => $courseid,
+            'userid' => $enrolleduserid,
         ];
         $userenrolments = $DB->get_record_sql($query, $params);
         return $userenrolments;
     }
 
     /**
-     * User Profile image
-     * @param \stdClass $user user object
-     * @return url
+     * Returns user profile image URL.
+     *
+     * @param stdClass $user User object.
+     * @return string URL of user profile image.
      */
     public static function get_user_profile_image_url($user) {
         global $PAGE;
@@ -167,8 +169,10 @@ class user_data_handler {
     }
 
     /**
-     * @param \stdClass $user user object
-     * @return url
+     * Returns user description with formatted text and file URLs.
+     *
+     * @param stdClass $user User object.
+     * @return string User description (HTML).
      */
     public static function get_user_description($user) {
         global $CFG;
@@ -188,24 +192,25 @@ class user_data_handler {
     }
 
     /**
-     * User custom fields
-     * @param \stdClass $user user object
-     * @return url
+     * Returns user custom profile fields with values.
+     *
+     * @param stdClass $user User object.
+     * @return array List of custom fields with details.
      */
     public static function get_user_customofields($user) {
         global $CFG;
         require_once($CFG->dirroot . "/user/profile/lib.php"); // Custom field library.
         $categories = profile_get_user_fields_with_data_by_category($user->id);
-        $user_customfields = [];
+        $usercustomfields = [];
         foreach ($categories as $categoryid => $fields) {
             foreach ($fields as $formfield) {
                 if (!empty($formfield->data)) {
-                    $user_customfields[] = [
-                        'name' => $formfield->field->name, // Human-readable name
-                        'value' => $formfield->data,       // Raw value
-                        'displayvalue' => $formfield->display_data(), // Formatted value
+                    $usercustomfields[] = [
+                        'name' => $formfield->field->name, // ... Human-readable name
+                        'value' => $formfield->data,       // ... Raw value
+                        'displayvalue' => $formfield->display_data(), // ... Formatted value
                         'type' => $formfield->field->datatype,
-                        'shortname' => $formfield->field->shortname
+                        'shortname' => $formfield->field->shortname,
                     ];
                 }
             }
@@ -213,35 +218,42 @@ class user_data_handler {
     }
 
     /**
-     * 
-     * get_user_info == user_get_user_details from /user/lib.php
-     * @param int $user user id
-     * @return array or boolen 
+     * Returns detailed user information.
+     *
+     * @param int $userid User ID.
+     * @param bool $timestamp Whether to return raw timestamps (true) or formatted dates (false).
+     * @return array|bool User information array or false if not found.
      */
     public static function get_user_info($userid, $timestamp = true) {
         global $DB;
         $userinfo = [];
 
-        if ($DB->record_exists('user', array('id' => $userid))) {
+        if ($DB->record_exists('user', ['id' => $userid])) {
             $user = $DB->get_record('user', ['id' => $userid]);
-            // default time zone
-            $default_timezone = get_config('moodle', 'timezone');
-            // users interests tags
-            $interests_tags = '';
-            $interests = core_tag_tag::get_item_tags_array('core', 'user', $user->id, core_tag_tag::BOTH_STANDARD_AND_NOT, 0, false);
+            // ... default time zone
+            $defaulttimezone = get_config('moodle', 'timezone');
+            // ... users interests tags
+            $intereststags = '';
+            $interests = core_tag_tag::get_item_tags_array(
+                'core',
+                'user',
+                $user->id,
+                core_tag_tag::BOTH_STANDARD_AND_NOT,
+                0,
+                false
+            );
             if ($interests) {
-                $interests_tags = join(', ', $interests);
+                $intereststags = join(', ', $interests);
             }
 
             // User preferences.
-            $preferences = array();
+            $preferences = [];
             $userpreferences = get_user_preferences();
             foreach ($userpreferences as $prefname => $prefvalue) {
-                $preferences[] = array('name' => $prefname, 'value' => $prefvalue);
+                $preferences[] = ['name' => $prefname, 'value' => $prefvalue];
             }
 
-
-            // data arrange to return
+            // ... data arrange to return
             $userinfo['id'] = $user->id;
             $userinfo['username'] = $user->username;
             $userinfo['email'] = $user->email;
@@ -259,7 +271,7 @@ class user_data_handler {
             $userinfo['lang'] = $user->lang;
             $userinfo['profileimage_link'] = self::get_user_profile_image_url($user);
             $userinfo['description'] = self::get_user_description($user);
-            $userinfo['timezone'] = ($user->timezone == '99') ? $default_timezone : $user->timezone;
+            $userinfo['timezone'] = ($user->timezone == '99') ? $defaulttimezone : $user->timezone;
             $userinfo['timecreated'] = ($timestamp) ? $user->timecreated : self::get_user_date_time($user->timecreated);
             $userinfo['timemodified'] = ($timestamp) ? $user->timemodified : self::get_user_date_time($user->timemodified);
             $userinfo['firstaccess'] = ($timestamp) ? $user->firstaccess : self::get_user_date_time($user->firstaccess, '');
@@ -267,12 +279,11 @@ class user_data_handler {
             $userinfo['lastlogin'] = ($timestamp) ? $user->lastlogin : self::get_user_date_time($user->lastlogin, '');
             $userinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $user->id]))->out();
             $userinfo['preferences'] = $preferences;
-            $userinfo['interests'] = $interests_tags;
+            $userinfo['interests'] = $intereststags;
             $userinfo['customofields'] = self::get_user_customofields($user);
             $userinfo['enrolled_courses'] = self::user_enrolled_courses($user);
             $userinfo['roles'] = self::get_all_roles($user->id);
 
-            // 
             return $userinfo;
         }
         return false;
@@ -280,22 +291,21 @@ class user_data_handler {
 
 
     /**
-     * Get all user information based on filters and pagination.
+     * Returns all user information based on filters and pagination.
      *
      * @param array $parameters {
-     *     Optional. An array of filter and pagination options.
+     *  Optional filter and pagination options.
      *
-     *     @type int    $page        Page number for pagination (default 0).
-     *     @type int    $perpage     Number of records per page (default 50).
-     *     @type int    $id          User ID filter (default 0).
-     *     @type string $search      Search keyword for users (default '').
-     *     @type array  $courseids   Course IDs filter (default []).
-     *     @type array  $roleids     Role IDs filter (default []).
-     *     @type int    $createdfrom Timestamp filter for created date from (default 0).
-     *     @type int    $createdto   Timestamp filter for created date to (default 0).
+     *  int    $page        Page number (default 0).
+     *  int    $perpage     Records per page (default 50).
+     *  int    $id          Filter by user ID (default 0).
+     *  string $search      Search keyword (default '').
+     *  array  $courseids   Filter by course IDs (default []).
+     *  array  $roleids     Filter by role IDs (default []).
+     *  int    $createdfrom Timestamp filter for created date from (default 0).
+     *  int    $createdto   Timestamp filter for created date to (default 0).
      * }
-     *
-     * @return array List of user information records.
+     * @return array List of user information records with metadata.
      */
     public static function get_all_user_info($parameters) {
 
@@ -331,7 +341,8 @@ class user_data_handler {
             $sqlparams['search_firstname'] = "%" . $searchuser . "%";
             $sqlparams['search_lastname'] = "%" . $searchuser . "%";
             $sqlparams['search_email'] = "%" . $searchuser . "%";
-            $wherecondition[] = '( u.username LIKE :search_username || u.firstname LIKE :search_firstname || u.lastname LIKE :search_lastname || u.email LIKE :search_email )';
+            $wherecondition[] = '( u.username LIKE :search_username || u.firstname LIKE :search_firstname ||
+                                 u.lastname LIKE :search_lastname || u.email LIKE :search_email )';
         }
         // ... search by id
         if ($userid) {
@@ -379,32 +390,33 @@ class user_data_handler {
             $sqlparams = array_merge($sqlparams, $inparams);
             $wherecondition[] = "ctx.instanceid $insql";
         }
-        // ... join all conditions by AND 
+        // ... join all conditions by AND
         if (count($wherecondition) > 0) {
             $whereconditionapply .= " AND " . implode(" AND ", $wherecondition);
         }
-        // ... query join all extra tables 
+        // ... query join all extra tables
         if (count($queryjoin) > 0) {
             $queryjoinapply .= " " . implode(" ", $queryjoin);
         }
 
         // ... final sql query and execute
-        $sqlquery = 'SELECT DISTINCT u.id FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.id DESC ';
+        $sqlquery = 'SELECT DISTINCT u.id FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
-        $sqlquery = 'SELECT COUNT(DISTINCT u.id) FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.id DESC ';
+        $sqlquery = 'SELECT COUNT(DISTINCT u.id)
+                        FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
         $totalrecords = $DB->count_records_sql($sqlquery, $sqlparams);
 
-        //create return value
+        // ... create return value
         $datadisplaycount = $limitfrom;
         foreach ($records as $record) {
             $datadisplaycount++;
-            $record_info = self::get_user_info($record->id, false);
-            $record_info['sn'] = $datadisplaycount;
-            $alluserinfo['data'][] = $record_info;
+            $recordinfo = self::get_user_info($record->id, false);
+            $recordinfo['sn'] = $datadisplaycount;
+            $alluserinfo['data'][] = $recordinfo;
         }
-        // meta information
+        // ... meta information
         $alluserinfo['meta'] = [
             'totalrecords' => $totalrecords,
             'totalpage' => ceil($totalrecords / $perpage),
@@ -414,15 +426,16 @@ class user_data_handler {
             'datafrom' => ($datadisplaycount) ? $limitfrom + 1 : $limitfrom,
             'datato' => $datadisplaycount,
         ];
-        // return data
+
         return $alluserinfo;
     }
 
     /**
-     * User roles
-     * @param int $userid
-     * @param array $excluderoleids
-     * @return array
+     * Returns all roles for a user or all available roles.
+     *
+     * @param int $userid User ID (default 0 = return all roles).
+     * @param array $excluderoleids Role IDs to exclude.
+     * @return array List of roles (id, shortname, name).
      */
     public static function get_all_roles($userid = 0, $excluderoleids = []) {
         global $DB;
@@ -440,17 +453,21 @@ class user_data_handler {
                 $rolesdata[] = [
                     'id' => $role->id,
                     'shortname' => $role->shortname,
-                    'name' => $role->name ?: role_get_name($role)
+                    'name' => $role->name ?: role_get_name($role),
                 ];
             }
             if (is_siteadmin($userid)) {
-                $rolesdata[] = ['id' => '-1', 'shortname' => 'admin', 'name' => get_string('admin')];
+                $rolesdata[] = [
+                    'id' => '-1',
+                    'shortname' => 'admin',
+                    'name' => get_string('admin'),
+                ];
             }
             return $rolesdata;
         }
         // Get all roles.
         $rolesdata = [
-            '-1' => get_string('admin')
+            '-1' => get_string('admin'),
         ];
 
         $allrole = $DB->get_records('role');
@@ -462,5 +479,4 @@ class user_data_handler {
         }
         return $rolesdata;
     }
-    // END.
 }
