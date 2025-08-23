@@ -34,7 +34,7 @@ defined('MOODLE_INTERNAL') || die();
 
 // Access checks and Capability check.
 require_login(null, false);
-// admin_externalpage_setup('report_usercoursereports');
+admin_externalpage_setup('report_usercoursereports');
 $context = \context_system::instance();
 if (!has_capability('report/usercoursereports:view', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
@@ -116,8 +116,6 @@ if ($type == 'course') {
     $contents .= usercoursereports::get_course_info_table($pageurl, $parameters);
 } else if ($type == 'user') {
     $contents .= usercoursereports::get_user_info_table($pageurl, $parameters);
-} else {
-    $contents .= '<div> Please select the type.</div>';
 }
 
 // Output Content.
