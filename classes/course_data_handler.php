@@ -359,7 +359,7 @@ class course_data_handler {
             $courseinfo['fullname'] = format_string($course->fullname);
             $courseinfo['category_name'] = format_string($coursecategories->name);
             $courseinfo['course_link'] = $CFG->wwwroot . '/course/view.php?id=' . $course->id;
-            $courseinfo['course_category_link'] = (new \moodle_url('/course/index.php', ['id' => $course->category]))->out();
+            $courseinfo['course_category_link'] = (new \moodle_url('/course/index.php', ['categoryid' => $course->category]))->out();
             $courseinfo['enrollment_link'] = (new \moodle_url('/enrol/index.php', ['id' => $course->id]))->out();
             $courseinfo['thumbnail_image_link'] = self::get_course_image($course, $defaultvalues);
             $courseinfo['summary'] = self::get_course_formatted_summary($course);
@@ -439,7 +439,7 @@ class course_data_handler {
             $courseinfo['fullname'] = format_string($course->fullname);
             $courseinfo['category_name'] = format_string(($coursecategories->name));
             $courseinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out();
-            $courseinfo['course_category_link'] = (new \moodle_url('/course/index.php', ['id' => $course->category]))->out();
+            $courseinfo['course_category_link'] = (new \moodle_url('/course/index.php', ['categoryid' => $course->category]))->out();
             $courseinfo['enrollment_link'] = (new \moodle_url('/enrol/index.php', ['id' => $course->id]))->out();
             $courseinfo['participant_link'] = (new moodle_url('/user/index.php', ['id' => $course->id]))->out();
             $courseinfo['thumbnail_image_link'] = self::get_course_image($course, $defaultvalues);
