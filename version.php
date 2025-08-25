@@ -34,7 +34,7 @@ $plugin->component = 'report_usercoursereports';
 $plugin->release = '1.0.0';
 
 // This is the version of the plugin.
-$plugin->version = 2025082300;
+$plugin->version = 2025082301;
 
 // This is a stable release.
 $plugin->maturity = MATURITY_STABLE;
