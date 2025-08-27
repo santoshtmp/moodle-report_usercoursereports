@@ -103,6 +103,9 @@ class user_data_handler {
      * @return string Formatted date/time string.
      */
     public static function get_user_date_time($timestamp, $format = '%b %d, %Y') {
+        if (!$timestamp) {
+            return '';
+        }
         $date = new \DateTime();
         $date->setTimestamp(intval($timestamp));
         return userdate($date->getTimestamp(), $format);
