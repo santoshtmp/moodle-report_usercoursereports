@@ -56,6 +56,7 @@ $string['filter'] = 'Filter';
 $string['perpage'] = 'Per page';
 $string['coursecreateddatefromto'] = 'Course created from - to date';
 $string['coursestartdatefromto'] = 'Course Start from - to date';
+$string['invalidaccess'] = 'Invalied access.';
 $string['invalidtypeparam'] = 'Invalied report type param.';
 $string['invalidcreatedfromdate'] = 'Invalied created from date, it must be smaller than created to date.';
 $string['invalidcreatedtodate'] = 'Invalied created to date, it must be bigger than created from date.';

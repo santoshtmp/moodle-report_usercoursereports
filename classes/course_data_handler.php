@@ -185,13 +185,7 @@ class course_data_handler {
         global $USER, $COURSE;
         $course = $this->check_course($courseref);
         $context = \context_course::instance($COURSE->id);
-        $roles = get_user_roles($context, $USER->id);
-        $userstudent = false;
-        foreach ($roles as $key => $value) {
-            if ($value->roleid == '5') {
-                $userstudent = true;
-            }
-        }
+        $userstudent = is_enrolled($context, $USER, 'moodle/course:isincompletionreports');
         if (!$userstudent  || isguestuser() || empty($course)) {
             return;
         }
@@ -533,9 +527,10 @@ class course_data_handler {
         $whereconditionapply = "WHERE course.id <> :frontpagecourseid";
         // ... search by text
         if ($searchcourse) {
-            $sqlparams['search_fullname'] = "%" . $searchcourse . "%";
-            $sqlparams['search_shortname'] = "%" . $searchcourse . "%";
-            $wherecondition[] = '( course.fullname LIKE :search_fullname || course.shortname LIKE :search_shortname )';
+            $sqlparams['search_fullname'] = "%" . $DB->sql_like_escape($searchcourse) . "%";
+            $sqlparams['search_shortname'] = "%" . $DB->sql_like_escape($searchcourse) . "%";
+            $wherecondition[] = '( ' . $DB->sql_like('course.fullname', ':search_fullname') . ' OR ' .
+                $DB->sql_like('course.shortname', ':search_shortname') . ' )';
         }
         // ... search by id
         if ($courseid) {
@@ -595,15 +590,15 @@ class course_data_handler {
             $queryjoinapply .= " " . implode(" ", $queryjoin);
         }
         // ... final sql query and execute
-        $sqlquery = 'SELECT DISTINCT course.id
+        $sqlquery = 'SELECT course.id
                         FROM {course} course ' . $queryjoinapply . " " . $whereconditionapply . '
                         ORDER BY course.timemodified DESC ';
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
         // ... count total records
-        $sqlquery = 'SELECT COUNT(DISTINCT course.id)
-                        FROM {course} course ' . $queryjoinapply . " " . $whereconditionapply . '
-                        ORDER BY course.timemodified DESC ';
-        $totalrecords = $DB->count_records_sql($sqlquery, $sqlparams);
+        $sqlcount = 'SELECT COUNT(course.id)
+             FROM {course} course ' . $queryjoinapply . " " . $whereconditionapply;
+        $totalrecords = $DB->count_records_sql($sqlcount, $sqlparams);
+
 
         // ... create return value
         $datadisplaycount = $limitfrom;

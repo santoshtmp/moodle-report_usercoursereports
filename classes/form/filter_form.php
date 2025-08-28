@@ -106,7 +106,7 @@ class filter_form extends \moodleform {
                 \report_usercoursereports\user_data_handler::get_all_roles(0, [7, 8]),
                 [
                     'multiple' => true,
-                    'noselectionstring' => get_string('allroles'),
+                    'noselectionstring' => get_string('allroles', 'report_usercoursereports'),
                     'class' => 'usercoursereports-filter-field',
                 ]
             );

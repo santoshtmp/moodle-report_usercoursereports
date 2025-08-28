@@ -340,12 +340,14 @@ class user_data_handler {
         $whereconditionapply = "WHERE u.id <> :guest_user_id AND u.deleted <> :user_deleted AND u.suspended <> :user_suspended";
         // ... search by text
         if ($searchuser) {
-            $sqlparams['search_username'] = "%" . $searchuser . "%";
-            $sqlparams['search_firstname'] = "%" . $searchuser . "%";
-            $sqlparams['search_lastname'] = "%" . $searchuser . "%";
-            $sqlparams['search_email'] = "%" . $searchuser . "%";
-            $wherecondition[] = '( u.username LIKE :search_username || u.firstname LIKE :search_firstname ||
-                                 u.lastname LIKE :search_lastname || u.email LIKE :search_email )';
+            $sqlparams['search_username'] = "%" . $DB->sql_like_escape($searchuser) . "%";
+            $sqlparams['search_firstname'] = "%" . $DB->sql_like_escape($searchuser) . "%";
+            $sqlparams['search_lastname'] = "%" . $DB->sql_like_escape($searchuser) . "%";
+            $sqlparams['search_email'] = "%" . $DB->sql_like_escape($searchuser) . "%";
+            $wherecondition[] = '( ' . $DB->sql_like('u.username', ':search_username') . ' OR ' .
+                $DB->sql_like('u.firstname', ':search_firstname') . ' OR ' .
+                $DB->sql_like('u.lastname', ':search_lastname') . ' OR ' .
+                $DB->sql_like('u.email', ':search_email') . ' )';
         }
         // ... search by id
         if ($userid) {
@@ -403,13 +405,13 @@ class user_data_handler {
         }
 
         // ... final sql query and execute
-        $sqlquery = 'SELECT DISTINCT u.id
+        $sqlquery = 'SELECT u.id
                     FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
-        $sqlquery = 'SELECT COUNT(DISTINCT u.id)
-                        FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
+        $sqlquery = 'SELECT COUNT(u.id)
+                    FROM {user} u' . $queryjoinapply . " " . $whereconditionapply;
         $totalrecords = $DB->count_records_sql($sqlquery, $sqlparams);
 
         // ... create return value
