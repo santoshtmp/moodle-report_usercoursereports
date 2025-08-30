@@ -109,6 +109,15 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                 }
             });
 
+            // table column header for sorting.
+            $(document).on('click', '#' + filter_area_id + ' thead th.header a.sort-link', function (e) {
+                e.preventDefault();
+                const formquerystring = $(this).attr('href').split('?')[1];
+                if (formquerystring) {
+                    get_filter_report_table(formquerystring);
+                }
+            });
+
         }
     };
 });

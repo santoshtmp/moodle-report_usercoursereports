@@ -496,111 +496,126 @@ class course_data_handler {
      */
     public static function get_all_course_info($parameters) {
         global $DB;
-        $allcoursesinfo = [];
         // ... get parameter
-        $pagenumber = $parameters['page'] ?? 0;
-        $perpage = $parameters['perpage'] ?? 0;
-        $courseid = $parameters['id'] ?? '';
-        $searchcourse = $parameters['search'] ?? '';
-        $categoryids = $parameters['categoryids'] ?? [];
-        $courseformat = $parameters['courseformat'] ?? '';
-        $coursevisibility = $parameters['coursevisibility'] ?? '';
-        $enrolmethod = $parameters['enrolmethod'] ?? '';
-        $createdfrom = (int)$parameters['createdfrom'] ?? 0;
-        $createdto = (int)$parameters['createdto'] ?? 0;
-        $startdatefrom = (int)$parameters['startdatefrom'] ?? 0;
-        $startdateto = (int)$parameters['startdateto'] ?? 0;
+        $pagenumber         = (int)($parameters['page'] ?? 0);
+        $perpage            = (int)($parameters['perpage'] ?? 50);
+        $courseid           = (int)($parameters['id'] ?? 0);
+        $searchcourse       = trim($parameters['search'] ?? '');
+        $categoryids        = $parameters['categoryids'] ?? [];
+        $courseformat       = $parameters['courseformat'] ?? '';
+        $coursevisibility   = $parameters['coursevisibility'] ?? '';
+        $enrolmethod        = $parameters['enrolmethod'] ?? '';
+        $createdfrom        = (int)($parameters['createdfrom'] ?? 0);
+        $createdto          = (int)($parameters['createdto'] ?? 0);
+        $startdatefrom      = (int)($parameters['startdatefrom'] ?? 0);
+        $startdateto        = (int)($parameters['startdateto'] ?? 0);
+        $sortby             = $parameters['sortby'] ?? 'timemodified';
+        $sortdir            = $parameters['sortdir'] ?? SORT_DESC;
 
-        // ... default search params
-        $limitfrom = 0;
-        $perpage = ($perpage) ?: 50;
-        $limitnum = ($perpage > 0) ? $perpage : 0;
-        if ($pagenumber > 0) {
-            $limitfrom = $limitnum * $pagenumber;
-        }
-        $queryjoinapply = '';
-        $queryjoin = [];
-        $sqlparams = [
-            'frontpagecourseid' => 1,
-        ];
-        $wherecondition = [];
-        $whereconditionapply = "WHERE course.id <> :frontpagecourseid";
+        //... pagination
+        $limitnum   = ($perpage > 0) ? $perpage : 50;
+        $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
+
+        // ... SQL fragments
+        $jointable = [];
+        $sqlparams = ['frontpagecourseid' => 1];
+        $wherecondition = ["c.id <> :frontpagecourseid"];
+
         // ... search by text
         if ($searchcourse) {
             $sqlparams['search_fullname'] = "%" . $DB->sql_like_escape($searchcourse) . "%";
             $sqlparams['search_shortname'] = "%" . $DB->sql_like_escape($searchcourse) . "%";
-            $wherecondition[] = '( ' . $DB->sql_like('course.fullname', ':search_fullname') . ' OR ' .
-                $DB->sql_like('course.shortname', ':search_shortname') . ' )';
+            $wherecondition[] = '( ' .
+                $DB->sql_like('c.fullname', ':search_fullname') .
+                ' OR ' .
+                $DB->sql_like('c.shortname', ':search_shortname') .
+                ' )';
         }
         // ... search by id
         if ($courseid) {
             $sqlparams['courseid'] = $courseid;
-            $wherecondition[] = 'course.id = :courseid';
+            $wherecondition[] = 'c.id = :courseid';
         }
         // ... search by category id
         if (is_array($categoryids) && count($categoryids) > 0) {
             list($insql, $inparams) = $DB->get_in_or_equal($categoryids, SQL_PARAMS_NAMED, 'categoryid');
             $sqlparams = array_merge($sqlparams, $inparams);
-            $wherecondition[] = "course.category $insql";
+            $wherecondition[] = "c.category $insql";
         }
         // ... search by course format
         if ($courseformat && $courseformat != 'all') {
             $sqlparams['courseformat'] = $courseformat;
-            $wherecondition[] = 'course.format = :courseformat';
+            $wherecondition[] = 'c.format = :courseformat';
         }
         // ... search by coursevisibility
         if ($coursevisibility && $coursevisibility != 'all') {
             $coursevisibility = ($coursevisibility == 'show') ? 1 : 0;
             $sqlparams['coursevisibility'] = $coursevisibility;
-            $wherecondition[] = 'course.visible = :coursevisibility';
+            $wherecondition[] = 'c.visible = :coursevisibility';
         }
         // ... search by enrolmethod
         if ($enrolmethod && $enrolmethod != 'all') {
-            $queryjoin['enrol'] = "INNER JOIN {enrol} er ON er.courseid = course.id ";
+            $jointable['enrol'] = "INNER JOIN {enrol} er ON er.courseid = c.id";
             $sqlparams['enrolmethod'] = $enrolmethod;
             $wherecondition[] = 'er.enrol = :enrolmethod';
+            $wherecondition[] = 'er.status = ' . ENROL_INSTANCE_ENABLED;
         }
         // ... search by createdfrom
         if ($createdfrom) {
             $sqlparams['createdfrom'] = $createdfrom;
-            $wherecondition[] = 'course.timecreated >= :createdfrom';
+            $wherecondition[] = 'c.timecreated >= :createdfrom';
         }
         // ... search by createdto
         if ($createdto) {
             $sqlparams['createdto'] = $createdto + 24 * 3600;
-            $wherecondition[] = 'course.timecreated <= :createdto';
+            $wherecondition[] = 'c.timecreated <= :createdto';
         }
         // ... search by startdatefrom
         if ($startdatefrom) {
             $sqlparams['startdatefrom'] = $startdatefrom;
-            $wherecondition[] = 'course.startdate >= :startdatefrom';
+            $wherecondition[] = 'c.startdate >= :startdatefrom';
         }
         // ... search by startdateto
         if ($startdateto) {
             $sqlparams['startdateto'] = $startdateto + 24 * 3600;
-            $wherecondition[] = 'course.startdate <= :startdateto';
+            $wherecondition[] = 'c.startdate <= :startdateto';
         }
 
-        // ... join all conditions by AND
+        // ... apply where conditions with AND
+        $whereapply = '';
         if (count($wherecondition) > 0) {
-            $whereconditionapply .= " AND " . implode(" AND ", $wherecondition);
+            $whereapply = "WHERE " . implode(" AND ", $wherecondition);
         }
-        // ... query join all extra tables
-        if (count($queryjoin) > 0) {
-            $queryjoinapply .= " " . implode(" ", $queryjoin);
+
+        // ... apply table join
+        $joinapply = '';
+        if (count($jointable) > 0) {
+            $joinapply = implode(" ", $jointable);
         }
+
+        // ... order by sorting
+        $coursesortfields = ['fullname', 'shortname', 'startdate', 'timecreated', 'timemodified'];
+        if (in_array($sortby, $coursesortfields)) {
+            $sortby = 'c.' . $sortby;
+        } else {
+            $sortby = 'c.timemodified';
+        }
+        $sortdir = ($sortdir == SORT_ASC) ? 'ASC' : 'DESC';
+        $orderby = "ORDER BY " . $sortby . " " . $sortdir;
+
         // ... final sql query and execute
-        $sqlquery = 'SELECT course.id
-                        FROM {course} course ' . $queryjoinapply . " " . $whereconditionapply . '
-                        ORDER BY course.timemodified DESC ';
+        $sqlquery = 'SELECT c.id FROM {course} c ' .
+            $joinapply . " " .
+            $whereapply . " " . $orderby;
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
+
         // ... count total records
-        $sqlcount = 'SELECT COUNT(course.id)
-             FROM {course} course ' . $queryjoinapply . " " . $whereconditionapply;
+        $sqlcount = 'SELECT COUNT(c.id) FROM {course} c ' .
+            $joinapply . " " . $whereapply;
         $totalrecords = $DB->count_records_sql($sqlcount, $sqlparams);
 
-
         // ... create return value
+        $allcoursesinfo = [];
         $datadisplaycount = $limitfrom;
         foreach ($records as $record) {
             $datadisplaycount++;
@@ -611,9 +626,9 @@ class course_data_handler {
         // ... meta information
         $allcoursesinfo['meta'] = [
             'totalrecords' => $totalrecords,
-            'totalpage' => ceil($totalrecords / $perpage),
+            'totalpage' => ceil($totalrecords / $limitnum),
             'pagenumber' => $pagenumber,
-            'perpage' => $perpage,
+            'perpage' => $limitnum,
             'datadisplaycount' => $datadisplaycount,
             'datafrom' => ($datadisplaycount) ? $limitfrom + 1 : $limitfrom,
             'datato' => $datadisplaycount,

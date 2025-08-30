@@ -313,31 +313,32 @@ class user_data_handler {
     public static function get_all_user_info($parameters) {
 
         global $CFG, $DB;
-        $alluserinfo = [];
         // ... get parameter
         $pagenumber = $parameters['page'] ?? 0;
-        $perpage = $parameters['perpage'] ?? 0;
-        $userid = $parameters['id'] ?? 0;
+        $perpage    = $parameters['perpage'] ?? 0;
+        $userid     = $parameters['id'] ?? 0;
         $searchuser = $parameters['search'] ?? '';
-        $roleids = $parameters['roleids'] ?? [];
-        $courseids = $parameters['courseids'] ?? [];
+        $roleids    = $parameters['roleids'] ?? [];
+        $courseids  = $parameters['courseids'] ?? [];
+        $sortby     = $parameters['sortby'] ?? 'timemodified';
+        $sortdir    = $parameters['sortdir'] ?? SORT_DESC;
 
-        // ... default search params
-        $limitfrom = 0;
-        $perpage = ($perpage) ?: 50;
-        $limitnum = ($perpage > 0) ? $perpage : 0;
-        if ($pagenumber > 0) {
-            $limitfrom = $limitnum * $pagenumber;
-        }
-        $queryjoinapply = '';
-        $queryjoin = [];
+        //... pagination
+        $limitnum   = ($perpage > 0) ? $perpage : 50;
+        $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
+
+        // ... SQL fragments
+        $jointable = [];
         $sqlparams = [
             'guest_user_id' => 1,
             'user_deleted' => 1,
             'user_suspended' => 1,
         ];
-        $wherecondition = [];
-        $whereconditionapply = "WHERE u.id <> :guest_user_id AND u.deleted <> :user_deleted AND u.suspended <> :user_suspended";
+        $wherecondition = [
+            "u.id <> :guest_user_id",
+            "u.deleted <> :user_deleted",
+            "u.suspended <> :user_suspended",
+        ];
         // ... search by text
         if ($searchuser) {
             $sqlparams['search_username'] = "%" . $DB->sql_like_escape($searchuser) . "%";
@@ -372,7 +373,7 @@ class user_data_handler {
             });
             // ... now again if there are real roles user roles
             if (count($roleids) > 0) {
-                $queryjoin['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
+                $jointable['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
                 list($insql, $inparams) = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
                 $sqlparams = array_merge($sqlparams, $inparams);
                 $rolewherecondition[] = "ra.roleid $insql";
@@ -385,8 +386,8 @@ class user_data_handler {
         // ... search by course ids
         if (is_array($courseids) && count($courseids) > 0) {
 
-            $queryjoin['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
-            $queryjoin['context'] = "INNER JOIN {context} ctx ON ra.contextid = ctx.id";
+            $jointable['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
+            $jointable['context'] = "INNER JOIN {context} ctx ON ra.contextid = ctx.id";
 
             $sqlparams['contextlevel'] = CONTEXT_COURSE;
             $wherecondition[] = 'ctx.contextlevel = :contextlevel';
@@ -395,26 +396,41 @@ class user_data_handler {
             $sqlparams = array_merge($sqlparams, $inparams);
             $wherecondition[] = "ctx.instanceid $insql";
         }
-        // ... join all conditions by AND
+
+        // ... apply where conditions with AND
+        $whereapply = '';
         if (count($wherecondition) > 0) {
-            $whereconditionapply .= " AND " . implode(" AND ", $wherecondition);
-        }
-        // ... query join all extra tables
-        if (count($queryjoin) > 0) {
-            $queryjoinapply .= " " . implode(" ", $queryjoin);
+            $whereapply = "WHERE " . implode(" AND ", $wherecondition);
         }
 
+        // ... apply table join
+        $joinapply = '';
+        if (count($jointable) > 0) {
+            $joinapply = implode(" ", $jointable);
+        }
+
+        // ... order by sorting
+        $usersortfields = ['firstname', 'lastname', 'email',];
+        if (in_array($sortby, $usersortfields)) {
+            $sortby = 'u.' . $sortby;
+        } else {
+            $sortby = 'u.timemodified';
+        }
+        $sortdir = ($sortdir == SORT_ASC) ? 'ASC' : 'DESC';
+        $orderby = "ORDER BY " . $sortby . " " . $sortdir;
+
         // ... final sql query and execute
-        $sqlquery = 'SELECT u.id
-                    FROM {user} u' . $queryjoinapply . " " . $whereconditionapply . ' ORDER BY u.timemodified DESC ';
+        $sqlquery = "SELECT u.id FROM {user} u " .
+            $joinapply . " " . $whereapply . " " . $orderby;
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
-        $sqlquery = 'SELECT COUNT(u.id)
-                    FROM {user} u' . $queryjoinapply . " " . $whereconditionapply;
+        $sqlquery = 'SELECT COUNT(u.id) FROM {user} u ' .
+            $joinapply . " " . $whereapply;
         $totalrecords = $DB->count_records_sql($sqlquery, $sqlparams);
 
         // ... create return value
+        $alluserinfo = [];
         $datadisplaycount = $limitfrom;
         foreach ($records as $record) {
             $datadisplaycount++;
@@ -422,12 +438,13 @@ class user_data_handler {
             $recordinfo['sn'] = $datadisplaycount;
             $alluserinfo['data'][] = $recordinfo;
         }
+
         // ... meta information
         $alluserinfo['meta'] = [
             'totalrecords' => $totalrecords,
-            'totalpage' => ceil($totalrecords / $perpage),
+            'totalpage' => ceil($totalrecords / $limitnum),
             'pagenumber' => $pagenumber,
-            'perpage' => $perpage,
+            'perpage' => $limitnum,
             'datadisplaycount' => $datadisplaycount,
             'datafrom' => ($datadisplaycount) ? $limitfrom + 1 : $limitfrom,
             'datato' => $datadisplaycount,

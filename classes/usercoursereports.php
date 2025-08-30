@@ -126,8 +126,19 @@ class usercoursereports {
         $strdata->datafrom = $allcourseinfo['meta']['datafrom'];
         $strdata->datato = $allcourseinfo['meta']['datato'];
         $strdata->datatotal = $allcourseinfo['meta']['totalrecords'];
-        $contents = '';
+        $tableheader = [
+            ['sort' => false, 'field' => 'sn', 'title' => get_string('sn', 'report_usercoursereports')],
+            ['sort' => true, 'field' => 'fullname', 'title' => get_string('fullname')],
+            ['sort' => true, 'field' => 'category', 'title' => get_string('category')],
+            ['sort' => false, 'field' => 'participants', 'title' => get_string('participants')],
+            ['sort' => false, 'field' => 'format', 'title' => get_string('courseformat', 'report_usercoursereports')],
+            ['sort' => false, 'field' => 'visible', 'title' => get_string('coursevisibility', 'report_usercoursereports')],
+            ['sort' => false, 'field' => 'enrol', 'title' => get_string('enrolmentmethods', 'report_usercoursereports')],
+            ['sort' => false, 'field' => 'startdate', 'title' => get_string('startdateto', 'report_usercoursereports')],
+            ['sort' => false, 'field' => 'timecreated', 'title' => get_string('createddate', 'report_usercoursereports')],
+        ];
 
+        $contents = '';
         // Display the filter area content.
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
@@ -139,20 +150,7 @@ class usercoursereports {
         ]);
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
         $contents .= html_writer::start_tag('table', ['id' => 'course-report-table', 'class' => 'generaltable generalbox']);
-        $contents .= html_writer::start_tag('thead');
-        $contents .= html_writer::tag(
-            'tr',
-            html_writer::tag('th', get_string('sn', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('fullname')) .
-                html_writer::tag('th', get_string('category')) .
-                html_writer::tag('th', get_string('participants')) .
-                html_writer::tag('th', get_string('courseformat', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('coursevisibility', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('enrolmentmethods', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('startdateto', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('createddate', 'report_usercoursereports'))
-        );
-        $contents .= html_writer::end_tag('thead');
+        $contents .= self::get_table_header($tableheader, $parameters);
         $contents .= html_writer::start_tag('tbody', ['data-type' => 'course-report']);
         foreach ($allcourseinfo['data'] as $course) {
             // ... output item row
@@ -317,5 +315,84 @@ class usercoursereports {
         $contents .= html_writer::end_tag('div');
 
         return $contents;
+    }
+
+
+    /**
+     * Generates the <thead> section of a table for the report.
+     *
+     * @param array $tableheader Array of table header definitions.
+     *  Each element should be an associative array with keys:
+     *   - 'sort'  => bool, whether the column is sortable
+     *   - 'field' => string, field name used for sorting
+     *   - 'title' => string, the text to display in the header
+     * @param array $parameters Array of parameters including:
+     *   - 'urlparams' => array of current URL params
+     *   - 'sortby'   => string, current sort field
+     *   - 'sortdir'  => int, current sort direction (SORT_ASC or SORT_DESC)
+     *   - 'pagepath' => string, base page URL
+     * @return string HTML output for the table <thead> section
+     */
+    public static function get_table_header($tableheader, $parameters) {
+        $contents = '';
+        $contents .= html_writer::start_tag('thead');
+        $contents .= html_writer::start_tag('tr');
+        $headerindex = 0;
+        foreach ($tableheader as $key => $headervalue) {
+            $headerfield = $headervalue['field'];
+            if ($headervalue['sort']) {
+                $urlparams = $parameters['urlparams'];
+                $sortdir = SORT_DESC;
+                if ($parameters['sortby'] == $headerfield) {
+                    $sortdir = ($parameters['sortdir'] == SORT_ASC) ? SORT_DESC : SORT_ASC;
+                }
+                $urlparams['sortby'] = $headerfield;
+                $urlparams['sortdir'] = $sortdir;
+                $value = html_writer::link(
+                    new moodle_url(
+                        $parameters['pagepath'],
+                        $urlparams
+                    ),
+                    $headervalue['title'],
+                    ['class' => 'sort-link']
+                );
+                $value .= ($parameters['sortby'] == $headerfield) ? self::column_sort_icon($parameters['sortdir']) : '';
+            } else {
+                $value = $headervalue['title'];
+            }
+
+            $contents .= html_writer::tag(
+                'th',
+                $value,
+                [
+                    "class" => "header c{$headerindex} {$headerfield}",
+                    "scope" => "col",
+                ]
+            );
+            $headerindex++;
+        }
+        $contents .= html_writer::end_tag('tr');
+
+        $contents .= html_writer::end_tag('thead');
+        return $contents;
+    }
+
+
+    /**
+     * Returns the HTML for a sort icon based on the sort direction.
+     *
+     * This function outputs a Font Awesome icon indicating ascending or descending sort.
+     *
+     * @param int|string $sortdir The sort direction. Typically SORT_ASC (3), SORT_DESC (4), or empty for no sort.
+     * @return string HTML markup for the sort icon, or an empty string if no sort direction is specified.
+     */
+    public static function column_sort_icon($sortdir = '') {
+        if ($sortdir == SORT_ASC) {
+            return '<i class="icon fa fa-sort-asc fa-fw " title="Ascending" role="img" aria-label="Ascending"></i>';
+        } else if ($sortdir == SORT_DESC) {
+            return '<i class="icon fa fa-sort-desc fa-fw " title="Descending" role="img" aria-label="Descending"></i>';
+        } else {
+            return '';
+        }
     }
 }

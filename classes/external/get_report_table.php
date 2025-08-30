@@ -117,6 +117,8 @@ class get_report_table extends external_api {
                 // ... set page url
                 $pagepath   = '/report/usercoursereports/index.php';
                 $urlparams  = usercoursereports::urlparam($querydata);
+                $querydata['pagepath'] = $pagepath;
+                $querydata['urlparams'] = $urlparams;
                 $pageurl    = new \moodle_url($pagepath, $urlparams);
                 $filterdata['pageurl'] = $pageurl->out(false);
 
