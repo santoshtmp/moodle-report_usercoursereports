@@ -316,7 +316,7 @@ class course_data_handler {
      * @return array|false Course card info or false if course does not exist.
      */
     public static function course_card_info($courseid, $defaultvalues = false) {
-        global $DB, $CFG, $OUTPUT;
+        global $DB, $OUTPUT;
         $courseinfo = [];
 
         if ($DB->record_exists('course', ['id' => $courseid])) {
@@ -352,7 +352,7 @@ class course_data_handler {
             $courseinfo['shortname'] = format_string($course->shortname);
             $courseinfo['fullname'] = format_string($course->fullname);
             $courseinfo['category_name'] = format_string($coursecategories->name);
-            $courseinfo['course_link'] = $CFG->wwwroot . '/course/view.php?id=' . $course->id;
+            $courseinfo['course_link'] = (new \moodle_url('/course/view.php', array('id' => $course->id)))->out();
             $courseinfo['course_category_link'] = (new \moodle_url('/course/index.php', [
                 'categoryid' => $course->category,
             ]))->out();
@@ -369,19 +369,39 @@ class course_data_handler {
     }
 
     /**
+     * Get course enrolment plugin instance
+     */
+    public static function get_course_enrollmentmethods($courseid) {
+        $enrollmentmethods = [];
+        $enrolinstances = enrol_get_instances((int)$courseid, true);
+        foreach ($enrolinstances as $key => $courseenrolinstance) {
+            $enrolplugin = enrol_get_plugin($courseenrolinstance->enrol);
+            $instance = [
+                'enrol' => $courseenrolinstance->enrol,
+                'name' => $enrolplugin->get_instance_name($courseenrolinstance),
+                'cost' => $courseenrolinstance->cost,
+                'currency' => $courseenrolinstance->currency,
+                'roleid' => $courseenrolinstance->roleid,
+            ];
+            $enrollmentmethods[] = $instance;
+        }
+        return $enrollmentmethods;
+    }
+
+    /**
      * Get detailed information for a course.
      *
      * @param int $courseid Course ID.
      * @param bool $defaultvalues Whether to return default values.
      * @param bool $timestamp Whether to return timestamps or formatted dates.
-     * @return array|false Detailed course info or false if not found.
+     * @return array Detailed course info array or empty array if not found.
      */
     public static function get_course_info($courseid, $defaultvalues = false, $timestamp = true) {
         global $DB;
         $courseinfo = [];
 
         if ($DB->record_exists('course', ['id' => $courseid])) {
-            $course = $DB->get_record('course', ['id' => $courseid]);
+            $course = get_course($courseid);
             $context = \context_course::instance($course->id, IGNORE_MISSING);
             $coursecategories = $DB->get_record('course_categories', ['id' => $course->category]);
 
@@ -395,24 +415,11 @@ class course_data_handler {
                 $numsections = get_config('moodlecourse ')->numsections;
             }
 
-            // ... get course enrolment plugin instance.
-            $enrollmentmethods = [];
-            $index = 0;
-            $enrolinstances = enrol_get_instances((int)$course->id, true);
-            foreach ($enrolinstances as $key => $courseenrolinstance) {
-                $enrolplugin = enrol_get_plugin($courseenrolinstance->enrol);
-                $enrollmentmethods[$index]['enrol'] = $courseenrolinstance->enrol;
-                $enrollmentmethods[$index]['name'] = $enrolplugin->get_instance_name($courseenrolinstance);
-                $enrollmentmethods[$index]['cost'] = $courseenrolinstance->cost;
-                $enrollmentmethods[$index]['currency'] = $courseenrolinstance->currency;
-                $enrollmentmethods[$index]['roleid'] = $courseenrolinstance->roleid;
-                $index++;
-            }
-
             // Get all enrolled users for the course.
             $enrolledlearners = get_enrolled_users($context, 'moodle/course:isincompletionreports');
             $useridlist = array_keys($enrolledlearners);
             $countactiveusers = 0;
+            $countcompletedusers = 0;
             if (is_array($useridlist) && count($useridlist) > 0) {
                 list($insql, $inparams) = $DB->get_in_or_equal($useridlist, SQL_PARAMS_NAMED, 'lauid');
                 $sqlparams = array_merge(['courseid' => $course->id], $inparams);
@@ -455,7 +462,7 @@ class course_data_handler {
                 $course->timecreated : user_data_handler::get_user_date_time($course->timecreated);
             $courseinfo['course_timemodified'] = ($timestamp) ?
                 $course->timemodified : user_data_handler::get_user_date_time($course->timemodified);
-            $courseinfo['enrollment_methods'] = $enrollmentmethods;
+            $courseinfo['enrollment_methods'] = self::get_course_enrollmentmethods($course->id);
             $courseinfo['count_enrolled_users'] = count_enrolled_users($context);
             $courseinfo['count_enrolled_isincompletionreports'] = count($enrolledlearners);
             $courseinfo['count_active_users'] = $countactiveusers;
@@ -465,10 +472,8 @@ class course_data_handler {
 
             $extrametadata = self::get_custom_field_metadata($courseid, 'key_value');
             $courseinfo = [...$courseinfo, ...$extrametadata];
-
-            return $courseinfo;
         }
-        return false;
+        return $courseinfo;
     }
 
     /**
@@ -489,17 +494,17 @@ class course_data_handler {
      *  int    $startdatefrom    Start date from timestamp.
      *  int    $startdateto      Start date to timestamp.
      * }
+     * @param bool $alldetail
      * @return array {
      *  array $data List of course info arrays.
      *  array $meta Pagination meta data.
      * }
      */
-    public static function get_all_course_info($parameters) {
+    public static function get_all_course_info($parameters, $alldetail = false) {
         global $DB;
         // ... get parameter
         $pagenumber         = (int)($parameters['page'] ?? 0);
         $perpage            = (int)($parameters['perpage'] ?? 50);
-        $courseid           = (int)($parameters['id'] ?? 0);
         $searchcourse       = trim($parameters['search'] ?? '');
         $categoryids        = $parameters['categoryids'] ?? [];
         $courseformat       = $parameters['courseformat'] ?? '';
@@ -530,11 +535,6 @@ class course_data_handler {
                 ' OR ' .
                 $DB->sql_like('c.shortname', ':search_shortname') .
                 ' )';
-        }
-        // ... search by id
-        if ($courseid) {
-            $sqlparams['courseid'] = $courseid;
-            $wherecondition[] = 'c.id = :courseid';
         }
         // ... search by category id
         if (is_array($categoryids) && count($categoryids) > 0) {
@@ -581,32 +581,64 @@ class course_data_handler {
             $wherecondition[] = 'c.startdate <= :startdateto';
         }
 
+        // ... apply table join
+        $joinapply = '';
+        $jointable['course_categories'] = "JOIN {course_categories} cc ON cc.id = c.category";
+        if (count($jointable) > 0) {
+            $joinapply = implode(" ", $jointable);
+        }
+
         // ... apply where conditions with AND
         $whereapply = '';
         if (count($wherecondition) > 0) {
             $whereapply = "WHERE " . implode(" AND ", $wherecondition);
         }
 
-        // ... apply table join
-        $joinapply = '';
-        if (count($jointable) > 0) {
-            $joinapply = implode(" ", $jointable);
-        }
-
         // ... order by sorting
         $coursesortfields = ['fullname', 'shortname', 'startdate', 'timecreated', 'timemodified'];
         if (in_array($sortby, $coursesortfields)) {
             $sortby = 'c.' . $sortby;
+        } else if ($sortby == 'category') {
+            $sortby = 'cc.name';
+        } else if ($sortby == 'participants') {
+            $sortby = 'participants';
         } else {
             $sortby = 'c.timemodified';
         }
         $sortdir = ($sortdir == SORT_ASC) ? 'ASC' : 'DESC';
         $orderby = "ORDER BY " . $sortby . " " . $sortdir;
 
+        // ... query select fields if required. 
+        $selectfields = 'c.id';
+        if (!$alldetail) {
+            $selectfields = implode(
+                ", ",
+                [
+                    'c.id',
+                    'c.category',
+                    'c.fullname',
+                    'c.shortname',
+                    'c.format',
+                    'c.visible',
+                    'c.startdate',
+                    'c.timecreated',
+                    'cc.name AS category_name',
+                    '(SELECT COUNT(ue.id)
+                        FROM {user_enrolments} ue
+                        JOIN {enrol} e ON e.id = ue.enrolid
+                        WHERE e.courseid = c.id
+                    ) AS participants'
+                ]
+            );
+        }
+
         // ... final sql query and execute
-        $sqlquery = 'SELECT c.id FROM {course} c ' .
+        $sqlquery = "SELECT " . $selectfields .
+            " FROM {course} c " .
             $joinapply . " " .
-            $whereapply . " " . $orderby;
+            $whereapply . " " .
+            $orderby;
+        // var_dump($sqlquery, $sqlparams); die;
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
@@ -619,8 +651,13 @@ class course_data_handler {
         $datadisplaycount = $limitfrom;
         foreach ($records as $record) {
             $datadisplaycount++;
-            $recordinfo = self::get_course_info($record->id, true, false);
+            if ($alldetail) {
+                $recordinfo = self::get_course_info($record->id, true, false);
+            } else {
+                $recordinfo = self::course_tablerow_info($record);
+            }
             $recordinfo['sn'] = $datadisplaycount;
+
             $allcoursesinfo['data'][] = $recordinfo;
         }
         // ... meta information
@@ -635,5 +672,49 @@ class course_data_handler {
         ];
 
         return $allcoursesinfo;
+    }
+
+
+
+    /**
+     * Build a course info array for a given course to display in table row.
+     *
+     * @param int|\stdClass $course Course id or course object.
+     * @return array course information for table rows.
+     */
+    public static function course_tablerow_info($course) {
+        $courseinfo = [];
+
+        // Ensure we have a course.
+        if (is_int($course)) {
+            if ($course < 1) {
+                throw new \moodle_exception('invalidcourseid');
+            }
+            $course = get_course($course);
+        } else if (!is_object($course) || empty($course->id)) {
+            throw new \moodle_exception('invalidcourse');
+        }
+
+        // ... Prepare data.
+        $courseinfo['id'] = $course->id;
+        $courseinfo['categoryid'] = $course->category;
+        $courseinfo['shortname'] = format_string($course->shortname);
+        $courseinfo['fullname'] = format_string($course->fullname);
+        $courseinfo['category_name'] = format_string(($course->category_name));
+        $courseinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out();
+        $courseinfo['course_category_link'] = (new \moodle_url(
+            '/course/index.php',
+            ['categoryid' => $course->category,]
+        ))->out();
+        $courseinfo['thumbnail_image_link'] = self::get_course_image($course, true);
+        $courseinfo['course_format'] = $course->format;
+        $courseinfo['course_visible'] = $course->visible;
+        $courseinfo['count_participants'] = $course->participants;
+        $courseinfo['course_startdate'] = user_data_handler::get_user_date_time($course->startdate);
+        $courseinfo['course_timecreated'] = user_data_handler::get_user_date_time($course->timecreated);
+        $courseinfo['enrollment_methods'] = self::get_course_enrollmentmethods($course->id);
+
+        // ... return data
+        return $courseinfo;
     }
 }

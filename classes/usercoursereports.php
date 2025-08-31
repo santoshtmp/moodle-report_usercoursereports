@@ -130,7 +130,7 @@ class usercoursereports {
             ['sort' => false, 'field' => 'sn', 'title' => get_string('sn', 'report_usercoursereports')],
             ['sort' => true, 'field' => 'fullname', 'title' => get_string('fullname')],
             ['sort' => true, 'field' => 'category', 'title' => get_string('category')],
-            ['sort' => false, 'field' => 'participants', 'title' => get_string('participants')],
+            ['sort' => true, 'field' => 'participants', 'title' => get_string('participants')],
             ['sort' => false, 'field' => 'format', 'title' => get_string('courseformat', 'report_usercoursereports')],
             ['sort' => false, 'field' => 'visible', 'title' => get_string('coursevisibility', 'report_usercoursereports')],
             ['sort' => false, 'field' => 'enrol', 'title' => get_string('enrolmentmethods', 'report_usercoursereports')],
@@ -138,8 +138,8 @@ class usercoursereports {
             ['sort' => false, 'field' => 'timecreated', 'title' => get_string('createddate', 'report_usercoursereports')],
         ];
 
-        $contents = '';
         // Display the filter area content.
+        $contents = '';
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
             'usercoursereports-filter-type' => $parameters['type'],
@@ -184,7 +184,7 @@ class usercoursereports {
                     $course['category_name']
                 )
             );
-            $contents .= html_writer::tag('td', $course['count_enrolled_users']);
+            $contents .= html_writer::tag('td', $course['count_participants']);
             $contents .= html_writer::tag('td', get_string('pluginname', 'format_' . $course['course_format']));
             $contents .= html_writer::tag('td', $course['course_visible'] ? get_string('show') : get_string('hide'));
             $contents .= html_writer::tag(
