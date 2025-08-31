@@ -555,10 +555,8 @@ class course_data_handler {
         }
         // ... search by enrolmethod
         if ($enrolmethod && $enrolmethod != 'all') {
-            $jointable['enrol'] = "INNER JOIN {enrol} er ON er.courseid = c.id";
             $sqlparams['enrolmethod'] = $enrolmethod;
-            $wherecondition[] = 'er.enrol = :enrolmethod';
-            $wherecondition[] = 'er.status = ' . ENROL_INSTANCE_ENABLED;
+            $wherecondition[] = 'e.enrol = :enrolmethod';
         }
         // ... search by createdfrom
         if ($createdfrom) {
@@ -584,9 +582,12 @@ class course_data_handler {
         // ... apply table join
         $joinapply = '';
         $jointable['course_categories'] = "JOIN {course_categories} cc ON cc.id = c.category";
+        $jointable['enrol'] = "LEFT JOIN {enrol} e ON e.courseid = c.id AND e.status = :enrolstatus";
+        $jointable['user_enrolments'] = "LEFT JOIN {user_enrolments} ue ON ue.enrolid = e.id";
         if (count($jointable) > 0) {
             $joinapply = implode(" ", $jointable);
         }
+        $sqlparams['enrolstatus'] = ENROL_INSTANCE_ENABLED;
 
         // ... apply where conditions with AND
         $whereapply = '';
@@ -610,6 +611,7 @@ class course_data_handler {
 
         // ... query select fields if required. 
         $selectfields = 'c.id';
+        $groupby = "c.id";
         if (!$alldetail) {
             $selectfields = implode(
                 ", ",
@@ -623,27 +625,25 @@ class course_data_handler {
                     'c.startdate',
                     'c.timecreated',
                     'cc.name AS category_name',
-                    '(SELECT COUNT(ue.id)
-                        FROM {user_enrolments} ue
-                        JOIN {enrol} e ON e.id = ue.enrolid
-                        WHERE e.courseid = c.id
-                    ) AS participants'
+                    'COUNT(DISTINCT ue.userid) AS participants'
                 ]
             );
+            $groupby = "c.id, c.category, c.fullname, c.shortname, c.format, c.visible, c.startdate, c.timecreated, cc.name";
         }
 
         // ... final sql query and execute
         $sqlquery = "SELECT " . $selectfields .
             " FROM {course} c " .
             $joinapply . " " .
-            $whereapply . " " .
+            $whereapply .
+            " GROUP BY " . $groupby . " " .
             $orderby;
-        // var_dump($sqlquery, $sqlparams); die;
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
-        $sqlcount = 'SELECT COUNT(c.id) FROM {course} c ' .
-            $joinapply . " " . $whereapply;
+        $sqlcount = 'SELECT COUNT(DISTINCT c.id) FROM {course} c ' .
+            $joinapply . " " .
+            $whereapply ;
         $totalrecords = $DB->count_records_sql($sqlcount, $sqlparams);
 
         // ... create return value
@@ -673,8 +673,6 @@ class course_data_handler {
 
         return $allcoursesinfo;
     }
-
-
 
     /**
      * Build a course info array for a given course to display in table row.
