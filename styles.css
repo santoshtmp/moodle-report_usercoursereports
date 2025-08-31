@@ -55,7 +55,8 @@
     display: block;
 }
 
-#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .accountstatus {
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .accountstatus-select {
+    display: flex;
     flex: 1 1 100%;
     gap: 12px;
 }

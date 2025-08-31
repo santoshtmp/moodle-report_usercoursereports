@@ -115,48 +115,36 @@ class filter_form extends \moodleform {
             $mform->setType('roleids', PARAM_INT);
             $mform->setDefault('roleids', $roleids);
 
-            // Suspended account radios.
-            $suspendedradio = [];
-            $suspendedradio[] = $mform->createElement('radio', 'suspended', '', get_string('any'), 'all');
-            $suspendedradio[] = $mform->createElement('radio', 'suspended', '', get_string('yes'), 'yes');
-            $suspendedradio[] = $mform->createElement('radio', 'suspended', '', get_string('no'), 'no');
-            $suspendedgroup = $mform->createElement(
-                'group',
-                'suspendedgroup',
-                get_string('accountsuspended', 'report_usercoursereports'),
-                $suspendedradio,
-                ' ',
-                false
-            );
-            $suspendedgroup->setAttributes(['class' => 'accountstatus suspendedgroup']);
+            // Suspended account dropdown.
+            $suspendedoptions = [
+                'all' => get_string('accountsuspended_any', 'report_usercoursereports'),
+                'yes' => get_string('accountsuspended_yes', 'report_usercoursereports'),
+                'no'  => get_string('accountsuspended_no', 'report_usercoursereports'),
+            ];
+            $suspendedselect = $mform->createElement('select', 'suspended', get_string('accountsuspended', 'report_usercoursereports'), $suspendedoptions);
+            $suspendedselect->setAttributes(['class' => 'accountstatus-select suspended-select']);
+            $mform->setType('suspended', PARAM_TEXT);
+            $mform->setDefault('suspended', $suspended);
 
-            // Confirmed account radios.
-            $confirmedradio = [];
-            $confirmedradio[] = $mform->createElement('radio', 'confirmed', '', get_string('any'), 'all');
-            $confirmedradio[] = $mform->createElement('radio', 'confirmed', '', get_string('yes'), 'yes');
-            $confirmedradio[] = $mform->createElement('radio', 'confirmed', '', get_string('no'), 'no');
-            $confirmedgroup = $mform->createElement(
-                'group',
-                'confirmedgroup',
-                get_string('accountconfirmed', 'report_usercoursereports'),
-                $confirmedradio,
-                ' ',
-                false
-            );
-            $confirmedgroup->setAttributes(['class' => 'accountstatus confirmedgroup']);
+            // Confirmed account dropdown.
+            $confirmedoptions = [
+                'all' => get_string('accountconfirmed_any', 'report_usercoursereports'),
+                'yes' => get_string('accountconfirmed_yes', 'report_usercoursereports'),
+                'no'  => get_string('accountconfirmed_no', 'report_usercoursereports'),
+            ];
+            $confirmedselect = $mform->createElement('select', 'confirmed', get_string('accountconfirmed', 'report_usercoursereports'), $confirmedoptions);
+            $confirmedselect->setAttributes(['class' => 'accountstatus-select confirmed-select']);
+            $mform->setType('confirmed', PARAM_TEXT);
+            $mform->setDefault('confirmed', $confirmed);
 
-            // Group suspended and confirmedtogether under "Account status".
+            // Group them together under "Account status".
             $mform->addGroup(
-                [$suspendedgroup, $confirmedgroup],
+                [$suspendedselect, $confirmedselect],
                 'accountstatus',
                 get_string('accountstatus', 'report_usercoursereports'),
-                '',
+                ' ',
                 false
             );
-            $mform->setType('suspended', PARAM_TEXT);
-            $mform->setDefault('suspended', $suspended ?: 'all');
-            $mform->setType('confirmed', PARAM_TEXT);
-            $mform->setDefault('confirmed', $confirmed ?: 'all');
             $mform->getElement('accountstatus')->setAttributes(['class' => 'usercoursereports-filter-field']);
         }
 
