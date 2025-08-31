@@ -532,7 +532,20 @@ class user_data_handler {
             if ($alldetail) {
                 $recordinfo = self::get_user_info($record->id, false);
             } else {
-                $recordinfo = self::user_tablerow_info($record);
+                $recordinfo = [];
+                $recordinfo['id'] = $record->id;
+                $recordinfo['username'] = $record->username;
+                $recordinfo['email'] = $record->email;
+                $recordinfo['firstname'] = $record->firstname;
+                $recordinfo['lastname'] = $record->lastname;
+                $recordinfo['city'] = $record->city;
+                $recordinfo['lastaccess'] = self::get_user_date_time($record->lastaccess, '');
+                $recordinfo['suspended'] = $record->suspended;
+                $recordinfo['confirmed'] = $record->confirmed;
+                $recordinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $record->id]))->out();
+                $recordinfo['profileimage_link'] = self::get_user_profile_image_url($DB->get_record('user', ['id' => $record->id]));
+                $recordinfo['count_enrolled_courses'] = $record->enrolledcourses;
+                $recordinfo['roles'] = self::get_all_roles($record->id);
             }
             $recordinfo['sn'] = $datadisplaycount;
             $alluserinfo['data'][] = $recordinfo;
@@ -550,42 +563,5 @@ class user_data_handler {
         ];
 
         return $alluserinfo;
-    }
-
-    /**
-     * Build a user info array for a given user to display in table row.
-     *
-     * @param int|\stdClass $user user id or user object.
-     * @return array user information for table rows.
-     */
-    public static function user_tablerow_info($user) {
-        $userinfo = [];
-
-        // Ensure we have a user.
-        if (is_int($user)) {
-            if ($user < 1) {
-                throw new \moodle_exception('invaliduserid');
-            }
-        } else if (!is_object($user) || empty($user->id)) {
-            throw new \moodle_exception('invaliduser');
-        }
-
-        // ... Prepare data.
-        $userinfo['id'] = $user->id;
-        $userinfo['username'] = $user->username;
-        $userinfo['email'] = $user->email;
-        $userinfo['firstname'] = $user->firstname;
-        $userinfo['lastname'] = $user->lastname;
-        $userinfo['city'] = $user->city;
-        $userinfo['lastaccess'] = self::get_user_date_time($user->lastaccess, '');
-        $userinfo['suspended'] = $user->suspended;
-        $userinfo['confirmed'] = $user->confirmed;
-        $userinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $user->id]))->out();
-        $userinfo['profileimage_link'] = self::get_user_profile_image_url($user);
-        $userinfo['count_enrolled_courses'] = $user->enrolledcourses;
-        $userinfo['roles'] = self::get_all_roles($user->id);
-
-        // ... return data
-        return $userinfo;
     }
 }

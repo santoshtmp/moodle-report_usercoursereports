@@ -654,7 +654,24 @@ class course_data_handler {
             if ($alldetail) {
                 $recordinfo = self::get_course_info($record->id, true, false);
             } else {
-                $recordinfo = self::course_tablerow_info($record);
+                $recordinfo = [];
+                $recordinfo['id'] = $record->id;
+                $recordinfo['categoryid'] = $record->category;
+                $recordinfo['shortname'] = format_string($record->shortname);
+                $recordinfo['fullname'] = format_string($record->fullname);
+                $recordinfo['category_name'] = format_string(($record->category_name));
+                $recordinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $record->id]))->out();
+                $recordinfo['course_category_link'] = (new \moodle_url(
+                    '/course/index.php',
+                    ['categoryid' => $record->category]
+                ))->out();
+                $recordinfo['thumbnail_image_link'] = self::get_course_image($record, true);
+                $recordinfo['course_format'] = $record->format;
+                $recordinfo['course_visible'] = $record->visible;
+                $recordinfo['count_participants'] = $record->participants;
+                $recordinfo['course_startdate'] = user_data_handler::get_user_date_time($record->startdate);
+                $recordinfo['course_timecreated'] = user_data_handler::get_user_date_time($record->timecreated);
+                $recordinfo['enrollment_methods'] = self::get_course_enrollmentmethods($record->id);
             }
             $recordinfo['sn'] = $datadisplaycount;
 
@@ -674,45 +691,4 @@ class course_data_handler {
         return $allcoursesinfo;
     }
 
-    /**
-     * Build a course info array for a given course to display in table row.
-     *
-     * @param int|\stdClass $course Course id or course object.
-     * @return array course information for table rows.
-     */
-    public static function course_tablerow_info($course) {
-        $courseinfo = [];
-
-        // Ensure we have a course.
-        if (is_int($course)) {
-            if ($course < 1) {
-                throw new \moodle_exception('invalidcourseid');
-            }
-            $course = get_course($course);
-        } else if (!is_object($course) || empty($course->id)) {
-            throw new \moodle_exception('invalidcourse');
-        }
-
-        // ... Prepare data.
-        $courseinfo['id'] = $course->id;
-        $courseinfo['categoryid'] = $course->category;
-        $courseinfo['shortname'] = format_string($course->shortname);
-        $courseinfo['fullname'] = format_string($course->fullname);
-        $courseinfo['category_name'] = format_string(($course->category_name));
-        $courseinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out();
-        $courseinfo['course_category_link'] = (new \moodle_url(
-            '/course/index.php',
-            ['categoryid' => $course->category]
-        ))->out();
-        $courseinfo['thumbnail_image_link'] = self::get_course_image($course, true);
-        $courseinfo['course_format'] = $course->format;
-        $courseinfo['course_visible'] = $course->visible;
-        $courseinfo['count_participants'] = $course->participants;
-        $courseinfo['course_startdate'] = user_data_handler::get_user_date_time($course->startdate);
-        $courseinfo['course_timecreated'] = user_data_handler::get_user_date_time($course->timecreated);
-        $courseinfo['enrollment_methods'] = self::get_course_enrollmentmethods($course->id);
-
-        // ... return data
-        return $courseinfo;
-    }
 }
