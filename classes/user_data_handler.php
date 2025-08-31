@@ -104,7 +104,7 @@ class user_data_handler {
      */
     public static function get_user_date_time($timestamp, $format = '%b %d, %Y') {
         if (!$timestamp) {
-            return '';
+            return get_string('never');
         }
         $date = new \DateTime();
         $date->setTimestamp(intval($timestamp));
@@ -221,6 +221,56 @@ class user_data_handler {
     }
 
     /**
+     * Returns all roles for a user or all available roles.
+     *
+     * @param int $userid User ID (default 0 = return all roles).
+     * @param array $excluderoleids Role IDs to exclude.
+     * @return array List of roles (id, shortname, name).
+     */
+    public static function get_all_roles($userid = 0, $excluderoleids = []) {
+        global $DB;
+        $rolesdata = [];
+
+        if ($userid) {
+            $sql = "SELECT DISTINCT r.*
+            FROM {role_assignments} ra
+            JOIN {role} r ON ra.roleid = r.id
+            WHERE ra.userid = ?";
+
+            $params = [$userid];
+            $roles = $DB->get_records_sql($sql, $params);
+            foreach ($roles as $key => $role) {
+                $rolesdata[] = [
+                    'id' => $role->id,
+                    'shortname' => $role->shortname,
+                    'name' => $role->name ?: role_get_name($role),
+                ];
+            }
+            if (is_siteadmin($userid)) {
+                $rolesdata[] = [
+                    'id' => '-1',
+                    'shortname' => 'admin',
+                    'name' => get_string('admin'),
+                ];
+            }
+            return $rolesdata;
+        }
+        // Get all roles.
+        $rolesdata = [
+            '-1' => get_string('admin'),
+        ];
+
+        $allrole = $DB->get_records('role');
+        foreach ($allrole as $key => $role) {
+            if (in_array($role->id, $excluderoleids)) {
+                continue;
+            }
+            $rolesdata[$role->id] = role_get_name($role);
+        }
+        return $rolesdata;
+    }
+
+    /**
      * Returns detailed user information.
      *
      * @param int $userid User ID.
@@ -263,6 +313,9 @@ class user_data_handler {
             $userinfo['firstname'] = $user->firstname;
             $userinfo['lastname'] = $user->lastname;
             $userinfo['auth'] = $user->auth;
+            $userinfo['suspended'] = $user->suspended;
+            $userinfo['confirmed'] = $user->confirmed;
+            $userinfo['policyagreed'] = $user->policyagreed;
             $userinfo['phone1'] = $user->phone1;
             $userinfo['phone2'] = $user->phone2;
             $userinfo['institution'] = $user->institution;
@@ -308,9 +361,10 @@ class user_data_handler {
      *  int    $createdfrom Timestamp filter for created date from (default 0).
      *  int    $createdto   Timestamp filter for created date to (default 0).
      * }
+     * @param bool $alldetail
      * @return array List of user information records with metadata.
      */
-    public static function get_all_user_info($parameters) {
+    public static function get_all_user_info($parameters, $alldetail = false) {
 
         global $CFG, $DB;
         // ... get parameter
@@ -318,12 +372,14 @@ class user_data_handler {
         $perpage    = $parameters['perpage'] ?? 0;
         $userid     = $parameters['id'] ?? 0;
         $searchuser = $parameters['search'] ?? '';
+        $suspended  = $parameters['suspended'] ?? '';
+        $confirmed  = $parameters['confirmed'] ?? '';
         $roleids    = $parameters['roleids'] ?? [];
         $courseids  = $parameters['courseids'] ?? [];
         $sortby     = $parameters['sortby'] ?? 'timemodified';
         $sortdir    = $parameters['sortdir'] ?? SORT_DESC;
 
-        //... pagination
+        // ... pagination
         $limitnum   = ($perpage > 0) ? $perpage : 50;
         $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
 
@@ -332,12 +388,10 @@ class user_data_handler {
         $sqlparams = [
             'guest_user_id' => 1,
             'user_deleted' => 1,
-            'user_suspended' => 1,
         ];
         $wherecondition = [
             "u.id <> :guest_user_id",
             "u.deleted <> :user_deleted",
-            "u.suspended <> :user_suspended",
         ];
         // ... search by text
         if ($searchuser) {
@@ -349,6 +403,16 @@ class user_data_handler {
                 $DB->sql_like('u.firstname', ':search_firstname') . ' OR ' .
                 $DB->sql_like('u.lastname', ':search_lastname') . ' OR ' .
                 $DB->sql_like('u.email', ':search_email') . ' )';
+        }
+        // ... suspended
+        if ($suspended && $suspended != 'all') {
+            $sqlparams['user_suspended'] = ($suspended == 'yes') ? 1 : 0;
+            $wherecondition[] = "u.suspended = :user_suspended";
+        }
+        // ... confirmed
+        if ($confirmed && $confirmed != 'all') {
+            $sqlparams['user_confirmed'] = ($confirmed == 'yes') ? 1 : 0;
+            $wherecondition[] = "u.confirmed = :user_confirmed";
         }
         // ... search by id
         if ($userid) {
@@ -397,36 +461,67 @@ class user_data_handler {
             $wherecondition[] = "ctx.instanceid $insql";
         }
 
+        // ... apply table join
+        $joinapply = '';
+        $jointable['user_enrolments'] = "LEFT JOIN {user_enrolments} ue ON ue.userid = u.id";
+        $jointable['enrol'] = "LEFT JOIN {enrol} e ON ue.enrolid = e.id";
+        if (count($jointable) > 0) {
+            $joinapply = implode(" ", $jointable);
+        }
+
         // ... apply where conditions with AND
         $whereapply = '';
         if (count($wherecondition) > 0) {
             $whereapply = "WHERE " . implode(" AND ", $wherecondition);
         }
 
-        // ... apply table join
-        $joinapply = '';
-        if (count($jointable) > 0) {
-            $joinapply = implode(" ", $jointable);
-        }
-
         // ... order by sorting
-        $usersortfields = ['firstname', 'lastname', 'email',];
+        $usersortfields = ['firstname', 'lastname', 'email', 'city', 'lastaccess'];
         if (in_array($sortby, $usersortfields)) {
             $sortby = 'u.' . $sortby;
+        } else if ($sortby == 'enrolledcourses') {
+            $sortby = 'enrolledcourses';
         } else {
             $sortby = 'u.timemodified';
         }
         $sortdir = ($sortdir == SORT_ASC) ? 'ASC' : 'DESC';
         $orderby = "ORDER BY " . $sortby . " " . $sortdir;
 
+        // ... query select fields if required.
+        $selectfields = 'u.id';
+        $groupby = 'u.id';
+        if (!$alldetail) {
+            $selectfields = implode(
+                ", ",
+                [
+                    'u.id',
+                    'u.username',
+                    'u.email',
+                    'u.firstname',
+                    'u.lastname',
+                    'u.suspended',
+                    'u.confirmed',
+                    'u.city',
+                    'u.lastaccess',
+                    'COUNT(DISTINCT e.courseid) AS enrolledcourses',
+                ]
+            );
+            $groupby = 'u.id, u.username, u.email, u.firstname, u.lastname, u.suspended, u.confirmed, u.city, u.lastaccess';
+        }
+
         // ... final sql query and execute
-        $sqlquery = "SELECT u.id FROM {user} u " .
-            $joinapply . " " . $whereapply . " " . $orderby;
+        $sqlquery = "SELECT " . $selectfields .
+            " FROM {user} u " .
+            $joinapply . " " .
+            $whereapply . " " .
+            " GROUP BY " . $groupby . " " .
+            $orderby;
         $records = $DB->get_records_sql($sqlquery, $sqlparams, $limitfrom, $limitnum);
 
         // ... count total records
-        $sqlquery = 'SELECT COUNT(u.id) FROM {user} u ' .
-            $joinapply . " " . $whereapply;
+        $sqlquery = 'SELECT COUNT(DISTINCT u.id) FROM {user} u ' .
+            $joinapply . " " .
+            $whereapply;
         $totalrecords = $DB->count_records_sql($sqlquery, $sqlparams);
 
         // ... create return value
@@ -434,7 +529,11 @@ class user_data_handler {
         $datadisplaycount = $limitfrom;
         foreach ($records as $record) {
             $datadisplaycount++;
-            $recordinfo = self::get_user_info($record->id, false);
+            if ($alldetail) {
+                $recordinfo = self::get_user_info($record->id, false);
+            } else {
+                $recordinfo = self::user_tablerow_info($record);
+            }
             $recordinfo['sn'] = $datadisplaycount;
             $alluserinfo['data'][] = $recordinfo;
         }
@@ -454,52 +553,39 @@ class user_data_handler {
     }
 
     /**
-     * Returns all roles for a user or all available roles.
+     * Build a user info array for a given user to display in table row.
      *
-     * @param int $userid User ID (default 0 = return all roles).
-     * @param array $excluderoleids Role IDs to exclude.
-     * @return array List of roles (id, shortname, name).
+     * @param int|\stdClass $user user id or user object.
+     * @return array user information for table rows.
      */
-    public static function get_all_roles($userid = 0, $excluderoleids = []) {
-        global $DB;
-        $rolesdata = [];
+    public static function user_tablerow_info($user) {
+        $userinfo = [];
 
-        if ($userid) {
-            $sql = "SELECT DISTINCT r.*
-            FROM {role_assignments} ra
-            JOIN {role} r ON ra.roleid = r.id
-            WHERE ra.userid = ?";
-
-            $params = [$userid];
-            $roles = $DB->get_records_sql($sql, $params);
-            foreach ($roles as $key => $role) {
-                $rolesdata[] = [
-                    'id' => $role->id,
-                    'shortname' => $role->shortname,
-                    'name' => $role->name ?: role_get_name($role),
-                ];
+        // Ensure we have a user.
+        if (is_int($user)) {
+            if ($user < 1) {
+                throw new \moodle_exception('invaliduserid');
             }
-            if (is_siteadmin($userid)) {
-                $rolesdata[] = [
-                    'id' => '-1',
-                    'shortname' => 'admin',
-                    'name' => get_string('admin'),
-                ];
-            }
-            return $rolesdata;
+        } else if (!is_object($user) || empty($user->id)) {
+            throw new \moodle_exception('invaliduser');
         }
-        // Get all roles.
-        $rolesdata = [
-            '-1' => get_string('admin'),
-        ];
 
-        $allrole = $DB->get_records('role');
-        foreach ($allrole as $key => $role) {
-            if (in_array($role->id, $excluderoleids)) {
-                continue;
-            }
-            $rolesdata[$role->id] = role_get_name($role);
-        }
-        return $rolesdata;
+        // ... Prepare data.
+        $userinfo['id'] = $user->id;
+        $userinfo['username'] = $user->username;
+        $userinfo['email'] = $user->email;
+        $userinfo['firstname'] = $user->firstname;
+        $userinfo['lastname'] = $user->lastname;
+        $userinfo['city'] = $user->city;
+        $userinfo['lastaccess'] = self::get_user_date_time($user->lastaccess, '');
+        $userinfo['suspended'] = $user->suspended;
+        $userinfo['confirmed'] = $user->confirmed;
+        $userinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $user->id]))->out();
+        $userinfo['profileimage_link'] = self::get_user_profile_image_url($user);
+        $userinfo['count_enrolled_courses'] = $user->enrolledcourses;
+        $userinfo['roles'] = self::get_all_roles($user->id);
+
+        // ... return data
+        return $userinfo;
     }
 }

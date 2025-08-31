@@ -60,12 +60,14 @@ class filter_form extends \moodleform {
         $startdatefrom = (int)$this->_customdata['startdatefrom'] ?? '';
         $startdateto = (int)$this->_customdata['startdateto'] ?? '';
         $perpage = (int)$this->_customdata['perpage'] ?? 50;
+        $suspended = $this->_customdata['suspended'] ?? '';
+        $confirmed = $this->_customdata['confirmed'] ?? '';
         $filterfieldwrapperexpanded = false;
         if (
-            ($type == 'course' &&  ($search ||
-                $categoryids || $courseformat || $coursevisibility || $enrolmethod ||
+            ($type == 'course' &&  ($categoryids || $courseformat || $coursevisibility || $enrolmethod ||
                 $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
-            ($type == 'user' &&  ($search || $courseids || $roleids || $perpage))
+            ($type == 'user' &&  ($courseids || $roleids || $suspended || $confirmed)) ||
+            ($search || $perpage != 50)
         ) {
             $filterfieldwrapperexpanded = true;
         }
@@ -112,6 +114,50 @@ class filter_form extends \moodleform {
             );
             $mform->setType('roleids', PARAM_INT);
             $mform->setDefault('roleids', $roleids);
+
+            // Suspended account radios.
+            $suspendedradio = [];
+            $suspendedradio[] = $mform->createElement('radio', 'suspended', '', get_string('any'), 'all');
+            $suspendedradio[] = $mform->createElement('radio', 'suspended', '', get_string('yes'), 'yes');
+            $suspendedradio[] = $mform->createElement('radio', 'suspended', '', get_string('no'), 'no');
+            $suspendedgroup = $mform->createElement(
+                'group',
+                'suspendedgroup',
+                get_string('accountsuspended', 'report_usercoursereports'),
+                $suspendedradio,
+                ' ',
+                false
+            );
+            $suspendedgroup->setAttributes(['class' => 'accountstatus suspendedgroup']);
+
+            // Confirmed account radios.
+            $confirmedradio = [];
+            $confirmedradio[] = $mform->createElement('radio', 'confirmed', '', get_string('any'), 'all');
+            $confirmedradio[] = $mform->createElement('radio', 'confirmed', '', get_string('yes'), 'yes');
+            $confirmedradio[] = $mform->createElement('radio', 'confirmed', '', get_string('no'), 'no');
+            $confirmedgroup = $mform->createElement(
+                'group',
+                'confirmedgroup',
+                get_string('accountconfirmed', 'report_usercoursereports'),
+                $confirmedradio,
+                ' ',
+                false
+            );
+            $confirmedgroup->setAttributes(['class' => 'accountstatus confirmedgroup']);
+
+            // Group suspended and confirmedtogether under "Account status".
+            $mform->addGroup(
+                [$suspendedgroup, $confirmedgroup],
+                'accountstatus',
+                get_string('accountstatus', 'report_usercoursereports'),
+                '',
+                false
+            );
+            $mform->setType('suspended', PARAM_TEXT);
+            $mform->setDefault('suspended', $suspended ?: 'all');
+            $mform->setType('confirmed', PARAM_TEXT);
+            $mform->setDefault('confirmed', $confirmed ?: 'all');
+            $mform->getElement('accountstatus')->setAttributes(['class' => 'usercoursereports-filter-field']);
         }
 
         // ... course report filter

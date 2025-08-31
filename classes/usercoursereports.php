@@ -57,7 +57,7 @@ class usercoursereports {
             'mform_isexpanded_id_filterfieldwrapper',
             '_qf__report_usercoursereports_form_filter_form',
         ];
-        $skipallparam = ['courseformat', 'coursevisibility', 'enrolmethod'];
+        $skipallparam = ['courseformat', 'coursevisibility', 'enrolmethod', 'suspended', 'confirmed'];
         foreach ($parameters as $key => $value) {
             if (in_array($key, $skipparam) || (in_array($key, $skipallparam) && $value == 'all')) {
                 continue;
@@ -232,9 +232,18 @@ class usercoursereports {
         $strdata->datafrom = $alluserinfo['meta']['datafrom'];
         $strdata->datato = $alluserinfo['meta']['datato'];
         $strdata->datatotal = $alluserinfo['meta']['totalrecords'];
-        $contents = '';
+        $tableheader = [
+            ['sort' => false, 'field' => 'sn', 'title' => get_string('sn', 'report_usercoursereports')],
+            ['sort' => true, 'field' => 'firstname', 'title' => get_string('fullname')],
+            ['sort' => true, 'field' => 'email', 'title' => get_string('email')],
+            ['sort' => false, 'field' => 'city', 'title' => get_string('city')],
+            ['sort' => false, 'field' => 'roles', 'title' => get_string('roles')],
+            ['sort' => true, 'field' => 'enrolledcourses', 'title' => get_string('enrolledcourses', 'report_usercoursereports')],
+            ['sort' => true, 'field' => 'lastaccess', 'title' => get_string('lastaccess', 'report_usercoursereports')],
+        ];
 
         // Display the filter area content.
+        $contents = '';
         $contents .= html_writer::start_tag('div', [
             'id' => 'report-usercoursereports-filter-area',
             'usercoursereports-filter-type' => $parameters['type'],
@@ -245,18 +254,7 @@ class usercoursereports {
         ]);
         $contents .= html_writer::tag('p', get_string('showingreportdatanumber', 'report_usercoursereports', $strdata));
         $contents .= html_writer::start_tag('table', ['id' => 'user-report-table', 'class' => 'generaltable generalbox']);
-        $contents .= html_writer::start_tag('thead');
-        $contents .= html_writer::tag(
-            'tr',
-            html_writer::tag('th', get_string('sn', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('fullname')) .
-                html_writer::tag('th', get_string('email')) .
-                html_writer::tag('th', get_string('city')) .
-                html_writer::tag('th', get_string('roles')) .
-                html_writer::tag('th', get_string('enrolledcourses', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('lastaccess', 'report_usercoursereports'))
-        );
-        $contents .= html_writer::end_tag('thead');
+        $contents .= self::get_table_header($tableheader, $parameters);
         $contents .= html_writer::start_tag('tbody', ['data-type' => 'user-report']);
         foreach ($alluserinfo['data'] as $user) {
             // ... output item row
@@ -296,7 +294,7 @@ class usercoursereports {
                     ['style' => 'list-style: none; padding-left: 0; margin: 0;'],
                 )
             );
-            $contents .= html_writer::tag('td', count($user['enrolled_courses']));
+            $contents .= html_writer::tag('td', $user['count_enrolled_courses']);
             $contents .= html_writer::tag('td', $user['lastaccess']);
             $contents .= html_writer::end_tag('tr');
         }

@@ -352,7 +352,7 @@ class course_data_handler {
             $courseinfo['shortname'] = format_string($course->shortname);
             $courseinfo['fullname'] = format_string($course->fullname);
             $courseinfo['category_name'] = format_string($coursecategories->name);
-            $courseinfo['course_link'] = (new \moodle_url('/course/view.php', array('id' => $course->id)))->out();
+            $courseinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out();
             $courseinfo['course_category_link'] = (new \moodle_url('/course/index.php', [
                 'categoryid' => $course->category,
             ]))->out();
@@ -517,7 +517,7 @@ class course_data_handler {
         $sortby             = $parameters['sortby'] ?? 'timemodified';
         $sortdir            = $parameters['sortdir'] ?? SORT_DESC;
 
-        //... pagination
+        // ... pagination
         $limitnum   = ($perpage > 0) ? $perpage : 50;
         $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
 
@@ -609,7 +609,7 @@ class course_data_handler {
         $sortdir = ($sortdir == SORT_ASC) ? 'ASC' : 'DESC';
         $orderby = "ORDER BY " . $sortby . " " . $sortdir;
 
-        // ... query select fields if required. 
+        // ... query select fields if required.
         $selectfields = 'c.id';
         $groupby = "c.id";
         if (!$alldetail) {
@@ -625,7 +625,7 @@ class course_data_handler {
                     'c.startdate',
                     'c.timecreated',
                     'cc.name AS category_name',
-                    'COUNT(DISTINCT ue.userid) AS participants'
+                    'COUNT(DISTINCT ue.userid) AS participants',
                 ]
             );
             $groupby = "c.id, c.category, c.fullname, c.shortname, c.format, c.visible, c.startdate, c.timecreated, cc.name";
@@ -643,7 +643,7 @@ class course_data_handler {
         // ... count total records
         $sqlcount = 'SELECT COUNT(DISTINCT c.id) FROM {course} c ' .
             $joinapply . " " .
-            $whereapply ;
+            $whereapply;
         $totalrecords = $DB->count_records_sql($sqlcount, $sqlparams);
 
         // ... create return value
@@ -702,7 +702,7 @@ class course_data_handler {
         $courseinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out();
         $courseinfo['course_category_link'] = (new \moodle_url(
             '/course/index.php',
-            ['categoryid' => $course->category,]
+            ['categoryid' => $course->category]
         ))->out();
         $courseinfo['thumbnail_image_link'] = self::get_course_image($course, true);
         $courseinfo['course_format'] = $course->format;

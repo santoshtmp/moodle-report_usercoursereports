@@ -5,6 +5,10 @@
     object-fit: cover;
 }
 
+#page-report_usercoursereports .user-thumbnail {
+    border-radius: 50%;
+}
+
 #page-report_usercoursereports .course-link {
     font-weight: bold;
     font-size: 16px;
@@ -49,6 +53,11 @@
 
 #page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .form-autocomplete-selection:has([role="option"]) {
     display: block;
+}
+
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .accountstatus {
+    flex: 1 1 100%;
+    gap: 12px;
 }
 
 #page-report_usercoursereports .report-usercoursereports-filter .filter-buttons {
