@@ -121,8 +121,13 @@ class filter_form extends \moodleform {
                 'yes' => get_string('accountsuspended_yes', 'report_usercoursereports'),
                 'no'  => get_string('accountsuspended_no', 'report_usercoursereports'),
             ];
-            $suspendedselect = $mform->createElement('select', 'suspended', get_string('accountsuspended', 'report_usercoursereports'), $suspendedoptions);
-            $suspendedselect->setAttributes(['class' => 'accountstatus-select suspended-select']);
+            $suspendedselect = $mform->createElement(
+                'select',
+                'suspended',
+                get_string('accountsuspended', 'report_usercoursereports'),
+                $suspendedoptions
+            );
+            $suspendedselect->updateAttributes(['class' => 'accountstatus-select suspended-select']);
             $mform->setType('suspended', PARAM_TEXT);
             $mform->setDefault('suspended', $suspended);
 
@@ -132,8 +137,13 @@ class filter_form extends \moodleform {
                 'yes' => get_string('accountconfirmed_yes', 'report_usercoursereports'),
                 'no'  => get_string('accountconfirmed_no', 'report_usercoursereports'),
             ];
-            $confirmedselect = $mform->createElement('select', 'confirmed', get_string('accountconfirmed', 'report_usercoursereports'), $confirmedoptions);
-            $confirmedselect->setAttributes(['class' => 'accountstatus-select confirmed-select']);
+            $confirmedselect = $mform->createElement(
+                'select',
+                'confirmed',
+                get_string('accountconfirmed', 'report_usercoursereports'),
+                $confirmedoptions
+            );
+            $confirmedselect->updateAttributes(['class' => 'accountstatus-select confirmed-select']);
             $mform->setType('confirmed', PARAM_TEXT);
             $mform->setDefault('confirmed', $confirmed);
 
