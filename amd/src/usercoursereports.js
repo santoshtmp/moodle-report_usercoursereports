@@ -23,16 +23,16 @@
 
 define(['jquery', 'core/ajax'], function ($, Ajax) {
 
-    var filter_area_id = 'report-usercoursereports-filter-area';
-    var applyfilterbtn_id = 'applyfilter';
+    var filterAreaId = 'report-usercoursereports-filter-area';
+    var applyFilterBtnId = 'applyfilter';
 
     /**
      *
      * @param {*} formquerystring
      */
-    function get_filter_report_table(formquerystring) {
-        $('#' + filter_area_id).attr('aria-busy', 'true');
-        $('#' + applyfilterbtn_id).prop('disabled', true);
+    function getFilterReportTable(formquerystring) {
+        $('#' + filterAreaId).attr('aria-busy', 'true');
+        $('#' + applyFilterBtnId).prop('disabled', true);
         $('#filter-loading-wrapper').show();
         // make ajax call
         const request = {
@@ -46,13 +46,13 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             // update report filter table content
             if (response.status && response.reporttable) {
                 window.history.replaceState('', 'url', response.pageurl);
-                $('#' + filter_area_id).replaceWith(response.reporttable);
+                $('#' + filterAreaId).replaceWith(response.reporttable);
             }
             // field validation and error
             $('#usercoursereports-filter [id^=id_error_]').html('').hide();
             if (!response.is_validated) {
-                let validation_errors = response.validation_errors || [];
-                validation_errors.forEach(element => {
+                let validationErrors = response.validation_errors || [];
+                validationErrors.forEach(element => {
                     let $errorContainer = $('#id_error_' + element.field);
                     if ($errorContainer.length) {
                         $errorContainer.html(element.error).show();
@@ -62,7 +62,7 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             // error message priint when status is false.
             if (!response.status && response.message) {
                 $('#error-response-message').remove();
-                $('#' + filter_area_id).prepend(
+                $('#' + filterAreaId).prepend(
                     '<p id="error-response-message" class="invalid-feedback" style="display:block;">' + response.message + '</p>'
                 );
             }
@@ -71,8 +71,8 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             window.console.log(response);
         });
         ajaxrequest.always(function () {
-            $('#' + filter_area_id).removeAttr('aria-busy');
-            $('#' + applyfilterbtn_id).prop('disabled', false);
+            $('#' + filterAreaId).removeAttr('aria-busy');
+            $('#' + applyFilterBtnId).prop('disabled', false);
             $('#filter-loading-wrapper').hide();
         });
     }
@@ -96,25 +96,25 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                 if (clickedButton != 'cancel') {
                     e.preventDefault();
                     const formquerystring = $(this).serialize();
-                    get_filter_report_table(formquerystring);
+                    getFilterReportTable(formquerystring);
                 }
             });
 
             // Pagination.
-            $(document).on('click', '#' + filter_area_id + ' nav.pagination a.page-link', function (e) {
+            $(document).on('click', '#' + filterAreaId + ' nav.pagination a.page-link', function (e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
-                    get_filter_report_table(formquerystring);
+                    getFilterReportTable(formquerystring);
                 }
             });
 
             // table column header for sorting.
-            $(document).on('click', '#' + filter_area_id + ' thead th.header a.sort-link', function (e) {
+            $(document).on('click', '#' + filterAreaId + ' thead th.header a.sort-link', function (e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
-                    get_filter_report_table(formquerystring);
+                    getFilterReportTable(formquerystring);
                 }
             });
 
