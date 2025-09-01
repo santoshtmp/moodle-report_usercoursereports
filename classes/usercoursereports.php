@@ -421,7 +421,6 @@ class usercoursereports {
             ['label' => get_string('city'), 'value' => $userinfo['city']],
             ['label' => get_string('country'), 'value' => $userinfo['country_name']],
             ['label' => get_string('address'), 'value' => $userinfo['address']],
-            ['label' => get_string('language'), 'value' => $languages[$userinfo['language']]],
             ['label' => get_string('timezone'), 'value' => $userinfo['timezone']],
             ['label' => get_string('institution'), 'value' => $userinfo['institution']],
             ['label' => get_string('department'), 'value' => $userinfo['department']],
@@ -435,6 +434,9 @@ class usercoursereports {
             ['label' => get_string('interests'), 'value' => $userinfo['interests']],
             ['label' => get_string('roles'), 'value' => implode(", ", array_column($userinfo['roles'], 'name'))],
         ];
+        if (count($languages) > 1) {
+            $userdetaillist[] = ['label' => get_string('language'), 'value' => $languages[$userinfo['language']]];
+        }
         if ($userinfo['customofields'] && is_array($userinfo['customofields'])) {
             foreach ($userinfo['customofields'] as $key => $customofields) {
                 $userdetaillist[] = [

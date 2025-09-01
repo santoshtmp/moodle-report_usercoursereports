@@ -19,9 +19,11 @@
 }}
 
 <div class="d-flex align-items-center justify-content-center" >
-    <img src="{{userinfo.profileimage_link}}" alt="{{userinfo.username}}" class="userpicture" width = "100px" height = "100px">
+    <img src="{{userinfo.profileimage_link}}" alt="{{userinfo.username}}" class="userpicture" width = "100" height = "100">
     <div class="d-flex ml-3 mt-auto mb-auto" >
-        <h2>{{userinfo.firstname}} {{userinfo.lastname}}</h2>
+        <h2>
+            <a href="{{userinfo.profile_link}}">{{userinfo.firstname}} {{userinfo.lastname}}</a>
+        </h2>
     </div>
 </div>
 
@@ -39,4 +41,5 @@
         </li>
         {{/userdetaillist}}
     </ul>
+    <p class="description">{{userinfo.description}}</p>
 </div>
