@@ -48,51 +48,26 @@ class user_data_handler {
      * @return array List of enrolled courses with progress and roles.
      */
     public static function user_enrolled_courses($user) {
-        $enrolledcourses = [];
-        if ($mycourses = enrol_get_users_courses($user->id, false, '*', 'visible DESC, fullname ASC, sortorder ASC')) {
-            foreach ($mycourses as $mycourse) {
-                if ($mycourse->category) {
-                    $coursecontext = \context_course::instance($mycourse->id);
-                    $percentage = self::get_user_course_progress($mycourse, $user->id);
+        $mycourses = enrol_get_users_courses($user->id, false, '*', 'visible DESC, fullname ASC, sortorder ASC');
+        foreach ($mycourses as &$mycourse) {
+            $coursecontext = \context_course::instance($mycourse->id);
+            $enrolments = self::course_user_enrolments($mycourse->id, $user->id);
 
-                    $enrolledcourse = [
-                        "id" => $mycourse->id,
-                        "fullname" => format_string($mycourse->fullname, true, ['context' => $coursecontext]),
-                        "shortname" => format_string($mycourse->shortname, true, ['context' => $coursecontext]),
-                        'course_link' => (new \moodle_url('/course/view.php', ['id' => $mycourse->id]))->out(),
-                        "progress" => $percentage,
-                        "completion_date" => ($percentage == 100) ? time() : "",
-                        "enroll_date" => self::course_user_enrolments($mycourse->id, $user->id)->timecreated,
-                        "cost" => "",
-                        "currency" => "",
-                        "course_user_roles" => "",
-                    ];
-
-                    $enrolinstances = enrol_get_instances((int)$mycourse->id, true);
-                    foreach ($enrolinstances as $key => $courseenrolinstance) {
-                        if ($courseenrolinstance->enrol == 'fee') {
-                            $enrolledcourse['cost'] = $courseenrolinstance->cost;
-                            $enrolledcourse['currency'] = $courseenrolinstance->currency;
-                        }
-                    }
-
-                    $courseuserroles = [];
-                    $roles = get_user_roles($coursecontext, $user->id);
-                    if ($roles && is_array($roles)) {
-                        $count = 0;
-                        foreach ($roles as $key => $role) {
-                            $courseuserroles[$count]['id'] = $role->id;
-                            $courseuserroles[$count]['shortname'] = $role->shortname;
-                            $courseuserroles[$count]['name'] = ($role->name) ?: $role->shortname;
-                            $count++;
-                        }
-                    }
-                    $enrolledcourse['course_user_roles'] = $courseuserroles;
-                    $enrolledcourses[] = $enrolledcourse;
-                }
+            $mycourse->percentage = self::get_user_course_progress($mycourse, $user->id);
+            $mycourse->course_link = (new \moodle_url('/course/view.php', ['id' => $mycourse->id]))->out();
+            $mycourse->enrolments_timecreated = self::get_user_date_time($enrolments->timecreated);
+            $mycourse->enrolinstances = enrol_get_instances((int)$mycourse->id, true);
+            $mycourse->mycourseroles = [];
+            $courseroles = get_user_roles($coursecontext, $user->id);
+            foreach ($courseroles as $key => $role) {
+                $mycourse->mycourseroles[] = [
+                    'id' => $role->id,
+                    'shortname' => $role->shortname,
+                    'name' => $role->name ?: role_get_name($role),
+                ];
             }
         }
-        return $enrolledcourses;
+        return $mycourses;
     }
 
     /**
@@ -214,10 +189,12 @@ class user_data_handler {
                         'displayvalue' => $formfield->display_data(), // ... Formatted value
                         'type' => $formfield->field->datatype,
                         'shortname' => $formfield->field->shortname,
+                        'categoryname' => $formfield->get_category_name(),
                     ];
                 }
             }
         }
+        return $usercustomfields;
     }
 
     /**
@@ -333,6 +310,7 @@ class user_data_handler {
             $userinfo['firstaccess'] = ($timestamp) ? $user->firstaccess : self::get_user_date_time($user->firstaccess, '');
             $userinfo['lastaccess'] = ($timestamp) ? $user->lastaccess : self::get_user_date_time($user->lastaccess, '');
             $userinfo['lastlogin'] = ($timestamp) ? $user->lastlogin : self::get_user_date_time($user->lastlogin, '');
+            $userinfo['currentlogin'] = ($timestamp) ? $user->currentlogin : self::get_user_date_time($user->currentlogin, '');
             $userinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $user->id]))->out();
             $userinfo['preferences'] = $preferences;
             $userinfo['interests'] = $intereststags;

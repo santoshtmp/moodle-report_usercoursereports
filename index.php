@@ -117,10 +117,13 @@ if ($filterform->is_cancelled()) {
 // Get the data and display.
 $contents = '';
 $contents .= usercoursereports::get_report_list($type, $pagepath);
-$contents .= $filterform->render();
-if ($type == 'course') {
+if ($type == 'user' && $parameters['id']) {
+    $contents .= usercoursereports::get_singleuser_info($parameters['id']);
+} else if ($type == 'course') {
+    $contents .= $filterform->render();
     $contents .= usercoursereports::get_course_info_table($pageurl, $parameters);
 } else if ($type == 'user') {
+    $contents .= $filterform->render();
     $contents .= usercoursereports::get_user_info_table($pageurl, $parameters);
 }
 

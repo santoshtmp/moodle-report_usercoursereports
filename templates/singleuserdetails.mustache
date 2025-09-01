@@ -1,0 +1,42 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template report_usercoursereports/singleuserdetails
+}}
+
+<div class="d-flex align-items-center justify-content-center" >
+    <img src="{{userinfo.profileimage_link}}" alt="{{userinfo.username}}" class="userpicture" width = "100px" height = "100px">
+    <div class="d-flex ml-3 mt-auto mb-auto" >
+        <h2>{{userinfo.firstname}} {{userinfo.lastname}}</h2>
+    </div>
+</div>
+
+<div class="singleuserdetails mt-4 pb-3">
+    <h3>{{#str}} userdetails {{/str}} </h3>
+    <ul class="userdetail-list row">
+        {{#userdetaillist}}
+        <li class="col-md-6 p-1">
+            {{^customofields}}
+                <strong>{{label}}:</strong> {{value}}
+            {{/customofields}}
+            {{#customofields}}
+                <strong>{{categoryname}} - {{label}}:</strong> {{value}}
+            {{/customofields}}
+        </li>
+        {{/userdetaillist}}
+    </ul>
+</div>
