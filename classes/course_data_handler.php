@@ -370,6 +370,8 @@ class course_data_handler {
 
     /**
      * Get course enrolment plugin instance
+     * @param int $courseid
+     * @return array
      */
     public static function get_course_enrollmentmethods($courseid) {
         $enrollmentmethods = [];

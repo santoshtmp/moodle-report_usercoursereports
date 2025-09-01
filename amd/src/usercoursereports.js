@@ -20,15 +20,15 @@
  * @author     santoshtmp7
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 define(['jquery', 'core/ajax'], function ($, Ajax) {
+    'use strict';
 
-    var filterAreaId = 'report-usercoursereports-filter-area';
-    var applyFilterBtnId = 'applyfilter';
+    const filterAreaId = 'report-usercoursereports-filter-area';
+    const applyFilterBtnId = 'applyfilter';
 
     /**
-     *
-     * @param {*} formquerystring
+     * Fetches and updates the report table via AJAX.
+     * @param {string} formquerystring
      */
     function getFilterReportTable(formquerystring) {
         $('#' + filterAreaId).attr('aria-busy', 'true');
@@ -37,9 +37,7 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
         // make ajax call
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
-            args: {
-                querystring: formquerystring,
-            }
+            args: { querystring: formquerystring }
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function (response) {
@@ -51,11 +49,11 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             // field validation and error
             $('#usercoursereports-filter [id^=id_error_]').html('').hide();
             if (!response.is_validated) {
-                let validationErrors = response.validation_errors || [];
+                const validationErrors = response.validation_errors || [];
                 validationErrors.forEach(element => {
-                    let $errorContainer = $('#id_error_' + element.field);
-                    if ($errorContainer.length) {
-                        $errorContainer.html(element.error).show();
+                    let errorContainer = $('#id_error_' + element.field);
+                    if (errorContainer.length) {
+                        errorContainer.html(element.error).show();
                     }
                 });
             }
@@ -79,7 +77,6 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
 
     return {
         init: function () {
-
             // Remove .col-md-3 and .col-md-9 from divs inside .usercoursereports-filter-field
             $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function () {
                 $(this).removeClass('col-md-3 col-md-9');
@@ -92,8 +89,8 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
 
             // On form submit
             $('#usercoursereports-filter').on('submit', function (e) {
-                let clickedButton = $(this).find('input[type=submit]:focus').attr('name');
-                if (clickedButton != 'cancel') {
+                const clickedButton = $(this).find('input[type=submit]:focus').attr('name');
+                if (clickedButton !== 'cancel') {
                     e.preventDefault();
                     const formquerystring = $(this).serialize();
                     getFilterReportTable(formquerystring);
@@ -117,7 +114,6 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                     getFilterReportTable(formquerystring);
                 }
             });
-
         }
     };
 });
