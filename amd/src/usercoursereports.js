@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * AMD module for User Course Reports filter + AJAX call
+ * AMD module for User Course Reports filter
  *
  * @copyright  2025 https://santoshmagar.com.np/
  * @author     santoshtmp7
