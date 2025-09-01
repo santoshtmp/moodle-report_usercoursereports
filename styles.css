@@ -47,11 +47,13 @@
     padding-left: 15px;
 }
 
-#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .form-autocomplete-selection:not(:has([role="option"])) {
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field 
+.form-autocomplete-selection:not(:has([role="option"])) {
     display: none;
 }
 
-#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field .form-autocomplete-selection:has([role="option"]) {
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field 
+.form-autocomplete-selection:has([role="option"]) {
     display: block;
 }
 

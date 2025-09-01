@@ -20,7 +20,7 @@
  * @author     santoshtmp7
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core/ajax'], function ($, Ajax) {
+define(['jquery', 'core/ajax'], function($, Ajax) {
     'use strict';
 
     const filterAreaId = 'report-usercoursereports-filter-area';
@@ -34,19 +34,19 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
         $('#' + filterAreaId).attr('aria-busy', 'true');
         $('#' + applyFilterBtnId).prop('disabled', true);
         $('#filter-loading-wrapper').show();
-        // make ajax call
+        // Make AJAX call
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
-            args: { querystring: formquerystring }
+            args: {querystring: formquerystring}
         };
         const ajaxrequest = Ajax.call([request])[0];
-        ajaxrequest.done(function (response) {
-            // update report filter table content
+        ajaxrequest.done(function(response) {
+            // Update report filter table content
             if (response.status && response.reporttable) {
                 window.history.replaceState('', 'url', response.pageurl);
                 $('#' + filterAreaId).replaceWith(response.reporttable);
             }
-            // field validation and error
+            // Field validation and error
             $('#usercoursereports-filter [id^=id_error_]').html('').hide();
             if (!response.is_validated) {
                 const validationErrors = response.validation_errors || [];
@@ -57,7 +57,7 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                     }
                 });
             }
-            // error message priint when status is false.
+            // Error message show when status is false.
             if (!response.status && response.message) {
                 $('#error-response-message').remove();
                 $('#' + filterAreaId).prepend(
@@ -65,10 +65,10 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                 );
             }
         });
-        ajaxrequest.fail(function (response) {
+        ajaxrequest.fail(function(response) {
             window.console.log(response);
         });
-        ajaxrequest.always(function () {
+        ajaxrequest.always(function() {
             $('#' + filterAreaId).removeAttr('aria-busy');
             $('#' + applyFilterBtnId).prop('disabled', false);
             $('#filter-loading-wrapper').hide();
@@ -76,9 +76,9 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
     }
 
     return {
-        init: function () {
+        init: function() {
             // Remove .col-md-3 and .col-md-9 from divs inside .usercoursereports-filter-field
-            $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function () {
+            $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function() {
                 $(this).removeClass('col-md-3 col-md-9');
             });
 
@@ -88,7 +88,7 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             }
 
             // On form submit
-            $('#usercoursereports-filter').on('submit', function (e) {
+            $('#usercoursereports-filter').on('submit', function(e) {
                 const clickedButton = $(this).find('input[type=submit]:focus').attr('name');
                 if (clickedButton !== 'cancel') {
                     e.preventDefault();
@@ -98,7 +98,7 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
             });
 
             // Pagination.
-            $(document).on('click', '#' + filterAreaId + ' nav.pagination a.page-link', function (e) {
+            $(document).on('click', '#' + filterAreaId + ' nav.pagination a.page-link', function(e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
@@ -106,8 +106,8 @@ define(['jquery', 'core/ajax'], function ($, Ajax) {
                 }
             });
 
-            // table column header for sorting.
-            $(document).on('click', '#' + filterAreaId + ' thead th.header a.sort-link', function (e) {
+            // Table column header for sorting.
+            $(document).on('click', '#' + filterAreaId + ' thead th.header a.sort-link', function(e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
