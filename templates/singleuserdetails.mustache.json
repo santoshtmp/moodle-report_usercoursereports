@@ -1,0 +1,21 @@
+{
+  "userinfo": {
+    "username": "janedoe",
+    "firstname": "Jane",
+    "lastname": "Doe",
+    "profile_link": "http://example.com/user/profile.php?id=2",
+    "profileimage_link": "http://example.com/theme/image.php/boost/core/1600000000/u/f2",
+    "description": "This is a test description for Jane Doe."
+  },
+  "userdetaillist": [
+    { "label": "Email address", "value": "janedoe@example.com" },
+    { "label": "Country", "value": "Australia" },
+    { "label": "Timezone", "value": "Asia/Kathmandu" },
+    {
+      "customofields": true,
+      "categoryname": "Custom profile fields",
+      "label": "Hobby",
+      "value": "Cycling"
+    }
+  ]
+}
