@@ -1,0 +1,92 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template report_usercoursereports/singlecoursedetails
+
+}}
+
+<div class="card shadow-lg rounded-3 singlecoursedetails mt-4" courseid="{{courseinfo.id}}">
+    <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+        <h3 class="mb-0"><i class="fa fa-book me-2"></i>{{courseinfo.fullname}}</h3>
+        <a href="{{courseinfo.course_link}}" class="btn btn-light btn-sm"><i class="fa fa-arrow-right"></i> {{#str}} viewcourse {{/str}}</a>
+    </div>
+
+    <div class="card-body">
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <div class="course-thumbnail-wrapper position-relative overflow-hidden rounded shadow-sm" style="width:100%; height:250px;">
+                    <img src="{{courseinfo.thumbnail_link}}" 
+                         alt="{{courseinfo.fullname}}" 
+                         class="img-fluid w-100 h-100" style="object-fit: cover;">
+                </div>
+                
+                <div class="mt-4">
+                    <h5><i class="fa fa-info-circle me-2 text-primary"></i>{{#str}} summary {{/str}}</h5>
+                    <div class="course-summary mt-3 text-muted">
+                        <p>{{courseinfo.summary}}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>{{#str}} fullnamecourse {{/str}}:</strong> 
+                        <a href="{{courseinfo.course_link}}">{{courseinfo.fullname}}</a>
+                    </li>
+                    <li class="list-group-item"><strong>{{#str}} shortnamecourse {{/str}}:</strong> {{courseinfo.shortname}}</li>
+                    <li class="list-group-item"><strong>{{#str}} coursecategory {{/str}}:</strong> 
+                        <a href="{{courseinfo.category_link}}">{{courseinfo.category_name}}</a>
+                    </li>
+                    <li class="list-group-item"><strong>{{#str}} coursevisibility {{/str}}:</strong> 
+                        {{#courseinfo.visible}}<span class="badge bg-success text-white p-2">{{#str}} show {{/str}}</span>{{/courseinfo.visible}}
+                        {{^courseinfo.visible}}<span class="badge bg-danger text-white p-2">{{#str}} hide {{/str}}</span>{{/courseinfo.visible}}
+                    </li>
+                    <li class="list-group-item"><strong>{{#str}} startdate {{/str}}:</strong> {{courseinfo.course_startdate}}</li>
+                    <li class="list-group-item"><strong>{{#str}} enddate {{/str}}:</strong> {{courseinfo.course_enddate}}</li>
+                    <li class="list-group-item"><strong>{{#str}} createddate,report_usercoursereports {{/str}}:</strong> {{courseinfo.course_timecreated}}</li>
+                    <li class="list-group-item"><strong>{{#str}} modifieddate,report_usercoursereports {{/str}}:</strong> {{courseinfo.course_timemodified}}</li>
+                    <li class="list-group-item"><strong>{{#str}} type_format,plugin {{/str}}:</strong> {{courseinfo.course_formatname}}</li>
+                    <li class="list-group-item"><strong>{{#str}} total_enrolled_users,report_usercoursereports {{/str}}:</strong> {{courseinfo.count_enrolled_users}}</li>
+                    <li class="list-group-item"><strong>{{#str}} total_sections,report_usercoursereports {{/str}}:</strong> {{courseinfo.total_sections}}</li>
+                    <li class="list-group-item"><strong>{{#str}} total_activities,report_usercoursereports {{/str}}:</strong> {{courseinfo.count_activities}}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h5><i class="fa fa-users-cog me-2 text-primary"></i>{{#str}} enrolmentmethods,report_usercoursereports {{/str}}</h5>
+            <ul class="list-inline">
+                {{#courseinfo.enrollment_methods}}
+                    <li class="text-white list-inline-item badge bg-info px-3 py-2 m-1">{{name}}</li>
+                {{/courseinfo.enrollment_methods}}
+            </ul>
+        </div>
+
+        <div class="mt-4">
+            <h5><i class="fa fa-layer-group me-2 text-primary"></i>{{#str}} groups {{/str}}</h5>
+            {{#courseinfo.groups}}
+                <ul class="list-inline">
+                    <li class="list-inline-item badge bg-secondary px-3 py-2 m-1">{{name}}</li>
+                </ul>
+            {{/courseinfo.groups}}
+            {{^courseinfo.groups}}
+                <p class="text-muted">{{#str}} nogroupsdefined,report_usercoursereports {{/str}}</p>
+            {{/courseinfo.groups}}
+        </div>
+    </div>
+</div>

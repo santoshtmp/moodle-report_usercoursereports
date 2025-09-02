@@ -542,4 +542,40 @@ class user_data_handler {
 
         return $alluserinfo;
     }
+
+    /**
+     * 
+     */
+    public static function get_courseusers($parameters) {
+        global $CFG, $DB;
+        // ... get parameter
+        $pagenumber     = $parameters['page'] ?? 0;
+        $perpage        = $parameters['perpage'] ?? 0;
+        $courseid       = $parameters['id'] ?? 0;
+        $searchuser     = $parameters['search'] ?? '';
+        $suspended      = $parameters['suspended'] ?? '';
+        $confirmed      = $parameters['confirmed'] ?? '';
+        $roleids        = $parameters['roleids'] ?? [];
+        $enrolmethod    = $parameters['enrolmethod'] ?? '';
+        $sortby         = $parameters['sortby'] ?? 'timemodified';
+        $sortdir        = $parameters['sortdir'] ?? SORT_DESC;
+
+        $sql = "SELECT 
+            u.id AS userid,
+            u.firstname,
+            u.lastname,
+            u.username,
+            u.email,
+            ue.status AS enrol_status,
+            ue.timecreated AS enrol_timecreated,
+            ue.timestart AS enrol_timestart,
+            ue.timeend AS enrol_timeend
+        FROM {user} u
+        JOIN {user_enrolments} ue ON ue.userid = u.id
+        JOIN {enrol} e ON e.id = ue.enrolid AND e.courseid = :courseid
+        WHERE u.deleted = 0
+        ORDER BY u.lastname, u.firstname, u.id";
+
+        return $DB->get_records_sql($sql, ['courseid' => $courseid]);
+    }
 }

@@ -119,6 +119,8 @@ $contents = '';
 $contents .= usercoursereports::get_report_list($type, $pagepath);
 if ($type == 'user' && $parameters['id']) {
     $contents .= usercoursereports::get_singleuser_info($parameters['id']);
+} else if ($type == 'course' && $parameters['id']) {
+    $contents .= usercoursereports::get_singlecourse_info($parameters);
 } else if ($type == 'course') {
     $contents .= $filterform->render();
     $contents .= usercoursereports::get_course_info_table($pageurl, $parameters);

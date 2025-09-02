@@ -136,6 +136,7 @@ class usercoursereports {
             ['sort' => false, 'field' => 'enrol', 'title' => get_string('enrolmentmethods', 'report_usercoursereports')],
             ['sort' => false, 'field' => 'startdate', 'title' => get_string('startdateto', 'report_usercoursereports')],
             ['sort' => false, 'field' => 'timecreated', 'title' => get_string('createddate', 'report_usercoursereports')],
+            ['sort' => false, 'field' => '', 'title' => ''],
         ];
 
         // Display the filter area content.
@@ -168,7 +169,7 @@ class usercoursereports {
                 html_writer::link(
                     $course['course_link'],
                     html_writer::img(
-                        $course['thumbnail_image_link'],
+                        $course['thumbnail_link'],
                         $course['fullname'],
                         ['class' => 'course-thumbnail']
                     ) .
@@ -180,13 +181,13 @@ class usercoursereports {
             $contents .= html_writer::tag(
                 'td',
                 html_writer::link(
-                    $course['course_category_link'],
+                    $course['category_link'],
                     $course['category_name']
                 )
             );
             $contents .= html_writer::tag('td', $course['count_participants']);
             $contents .= html_writer::tag('td', get_string('pluginname', 'format_' . $course['course_format']));
-            $contents .= html_writer::tag('td', $course['course_visible'] ? get_string('show') : get_string('hide'));
+            $contents .= html_writer::tag('td', $course['visible'] ? get_string('show') : get_string('hide'));
             $contents .= html_writer::tag(
                 'td',
                 html_writer::alist(
@@ -196,6 +197,14 @@ class usercoursereports {
             );
             $contents .= html_writer::tag('td', $course['course_startdate']);
             $contents .= html_writer::tag('td', $course['course_timecreated']);
+            $contents .= html_writer::tag(
+                'td',
+                html_writer::link(
+                    new moodle_url($parameters['pagepath'], ['type' => 'course', 'id' => $course['id']]),
+                    get_string('viewdetail', 'report_usercoursereports'),
+                    ['class' => 'view-user-detail']
+                )
+            );
             $contents .= html_writer::end_tag('tr');
         }
         $contents .= html_writer::end_tag('tbody');
@@ -507,6 +516,25 @@ class usercoursereports {
         $contents .= html_writer::end_tag('tbody');
         $contents .= html_writer::end_tag('table');
         $contents .= html_writer::end_div();
+
+        return $contents;
+    }
+
+
+    public static function get_singlecourse_info($parameters) {
+        global $OUTPUT;
+        $courseid = $parameters['id'];
+        $courseinfo = course_data_handler::get_course_info($courseid, true, false);
+        $context = [
+            'courseinfo' => $courseinfo
+        ];
+        $contents = '';
+        $contents .= $OUTPUT->render_from_template("report_usercoursereports/singlecoursedetails", $context);
+
+        $context = \context_course::instance($courseid);
+
+        $enrolledusers = get_enrolled_users($context);
+        
 
         return $contents;
     }
