@@ -25,8 +25,10 @@
 
 namespace report_usercoursereports;
 
+use flexible_table;
 use html_writer;
 use moodle_url;
+use report_usercoursereports\form\singlesearch;
 use stdClass;
 
 /**
@@ -79,11 +81,12 @@ class usercoursereports {
      *
      * Displays toggle buttons to switch between course and user reports.
      *
-     * @param string $type Current report type ('course' or 'user').
-     * @param string $pagepath The base page path for navigation.
+     * @param array $parameters
      * @return string HTML output of the report switcher.
      */
-    public static function get_report_list($type, $pagepath) {
+    public static function get_report_list($parameters) {
+        $type = $parameters['type']; // ... 'course' or 'user'
+        $pagepath = $parameters['pagepath'] ?? '/report/usercoursereports/index.php';
         $contents = '';
         $contents .= html_writer::start_tag(
             'div',
@@ -103,6 +106,11 @@ class usercoursereports {
             get_string('userreports', 'report_usercoursereports'),
             ['class' => ($type == 'user') ? 'active btn btn-primary' : 'btn btn-secondary']
         );
+
+        if ($parameters['id']) {
+            $singlesearch = new singlesearch(null, ['type' => $type], 'get', '', ['id' => 'usercoursereports-single-search']);
+            $contents .=  $singlesearch->render();
+        }
         $contents .= html_writer::end_tag('div');
         $contents .= html_writer::end_tag('div');
 
@@ -521,6 +529,13 @@ class usercoursereports {
     }
 
 
+    /**
+     * Generates a detailed view for a single course.
+     *
+     * @param array $parameters Array containing:
+     *   - 'id' => int, The ID of the course to display.
+     * @return string HTML output for the course details.
+     */
     public static function get_singlecourse_info($parameters) {
         global $OUTPUT;
         $courseid = $parameters['id'];
@@ -530,11 +545,6 @@ class usercoursereports {
         ];
         $contents = '';
         $contents .= $OUTPUT->render_from_template("report_usercoursereports/singlecoursedetails", $context);
-
-        $context = \context_course::instance($courseid);
-
-        $enrolledusers = get_enrolled_users($context);
-        
 
         return $contents;
     }

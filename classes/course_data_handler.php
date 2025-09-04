@@ -374,6 +374,7 @@ class course_data_handler {
      * @return array
      */
     public static function get_course_enrollmentmethods($courseid) {
+        global $DB;
         $enrollmentmethods = [];
         $enrolinstances = enrol_get_instances((int)$courseid, true);
         foreach ($enrolinstances as $key => $courseenrolinstance) {
@@ -384,10 +385,23 @@ class course_data_handler {
                 'cost' => $courseenrolinstance->cost,
                 'currency' => $courseenrolinstance->currency,
                 'roleid' => $courseenrolinstance->roleid,
+                'rolename' => role_get_name($DB->get_record('role', ['id' => $courseenrolinstance->roleid])),
             ];
             $enrollmentmethods[] = $instance;
         }
         return $enrollmentmethods;
+    }
+
+    /**
+     * Get group mode names.
+     * @return array Group mode choices.
+     */
+    public static function get_groupmode_name() {
+        $choices = array();
+        $choices[NOGROUPS] = get_string('groupsnone', 'group');
+        $choices[SEPARATEGROUPS] = get_string('groupsseparate', 'group');
+        $choices[VISIBLEGROUPS] = get_string('groupsvisible', 'group');
+        return $choices;
     }
 
     /**
@@ -399,7 +413,7 @@ class course_data_handler {
      * @return array Detailed course info array or empty array if not found.
      */
     public static function get_course_info($courseid, $defaultvalues = false, $timestamp = true) {
-        global $DB;
+        global $CFG, $DB;
         $courseinfo = [];
 
         if ($DB->record_exists('course', ['id' => $courseid])) {
@@ -451,6 +465,9 @@ class course_data_handler {
             $courseinfo['course_format'] = $course->format;
             $courseinfo['course_formatname'] = get_string('pluginname', 'format_' . $course->format);
             $courseinfo['visible'] = $course->visible;
+            $courseinfo['enablecompletion'] = $course->enablecompletion;
+            $courseinfo['maxbytes'] = get_max_upload_sizes($CFG->maxbytes, 0, 0, $course->maxbytes)[$course->maxbytes];
+            $courseinfo['groupmode'] = self::get_groupmode_name()[$course->groupmode];
             $courseinfo['course_startdate'] = ($timestamp) ?
                 $course->startdate : user_data_handler::get_user_date_time($course->startdate);
             $courseinfo['course_enddate'] = ($timestamp) ?
@@ -461,7 +478,7 @@ class course_data_handler {
                 $course->timemodified : user_data_handler::get_user_date_time($course->timemodified);
             $courseinfo['enrollment_methods'] = self::get_course_enrollmentmethods($course->id);
             $courseinfo['count_enrolled_users'] = count_enrolled_users($context);
-            $courseinfo['total_sections'] = $numsections + 1;
+            $courseinfo['total_sections'] = $numsections;
             $courseinfo['course_newsitems'] = $course->newsitems;
             $courseinfo['count_activities'] = count(course_modinfo::get_array_of_activities($course, true));
             $courseinfo['course_customfields'] = self::get_custom_field_metadata($courseid);

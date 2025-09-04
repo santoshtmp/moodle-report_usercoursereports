@@ -24,6 +24,8 @@
     max-width: 400px;
 }
 
+/* ----  report-usercoursereports-filter  section ---- */
+
 #page-report_usercoursereports .report-usercoursereports-filter .filter-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -87,5 +89,74 @@
 
     #page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field {
         padding-left: 0;
+    }
+}
+
+/* ---- usercoursereports-single-search */
+#page-report_usercoursereports #usercoursereports-single-search .form-autocomplete-selection {
+    display: none;
+}
+
+#page-report_usercoursereports #usercoursereports-single-search #fitem_id_id {
+    margin: 0;
+}
+
+/* ---- singlecoursedetails section ---- */
+#page-report_usercoursereports .singlecoursedetails .collapsed-summary {
+    max-height: 150px;
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.5s ease;
+}
+
+#page-report_usercoursereports .singlecoursedetails .collapsed-summary::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to top, white, transparent);
+}
+
+#page-report_usercoursereports .singlecoursedetails .coursedetail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item {
+    border: 1px solid #dee2e6;
+    border-left: none;
+    border-top: none;
+}
+
+#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:nth-child(odd) {
+    border-left: 1px solid #dee2e6;
+}
+
+#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:first-child,
+#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:nth-child(2) {
+    border-top: 1px solid #dee2e6;
+}
+
+#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item strong {
+    display: inline-block;
+    margin-right: .3rem;
+    font-weight: 600;
+}
+
+
+@media (max-width: 767.98px) {
+    #page-report_usercoursereports .singlecoursedetails .coursedetail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item {
+        border-left: 1px solid #dee2e6;
+    }
+
+    #page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:nth-child(odd) {
+        border-left: 1px solid #dee2e6;
     }
 }

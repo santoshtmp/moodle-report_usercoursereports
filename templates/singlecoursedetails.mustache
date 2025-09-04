@@ -21,8 +21,7 @@
 
 <div class="card shadow-lg rounded-3 singlecoursedetails mt-4" courseid="{{courseinfo.id}}">
     <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
-        <h3 class="mb-0"><i class="fa fa-book me-2"></i>{{courseinfo.fullname}}</h3>
-        <a href="{{courseinfo.course_link}}" class="btn btn-light btn-sm"><i class="fa fa-arrow-right"></i> {{#str}} viewcourse {{/str}}</a>
+        <h2 class="mb-0">{{courseinfo.fullname}} </h2>
     </div>
 
     <div class="card-body">
@@ -35,58 +34,152 @@
                          class="img-fluid w-100 h-100" style="object-fit: cover;">
                 </div>
                 
-                <div class="mt-4">
-                    <h5><i class="fa fa-info-circle me-2 text-primary"></i>{{#str}} summary {{/str}}</h5>
-                    <div class="course-summary mt-3 text-muted">
-                        <p>{{courseinfo.summary}}</p>
-                    </div>
+                 <div class="mt-4">
+                    <h4><i class="fa fa-users-cog text-primary"></i><span class="ml-2">{{#str}} enrolmentmethods,report_usercoursereports {{/str}}</span></h4>
+                    <ul class="list-unstyled ms-2">
+                        {{#courseinfo.enrollment_methods}}
+                            <li class="d-flex align-items-center mb-2">
+                                <span class="me-2 px-3 py-2">
+                                    <strong>{{name}}:</strong>
+                                    <span>{{rolename}}</span>
+                                    {{#cost}}
+                                        <span class="badge bg-success text-white p-2" data-type="costwrapper">
+                                            <span data-type="currency">{{currency}}</span> 
+                                            <span data-type="cost">{{cost}}</span> 
+                                        </span>
+                                    {{/cost}}
+                                </span>
+                            </li>
+                        {{/courseinfo.enrollment_methods}}
+                        {{^courseinfo.enrollment_methods}}
+                            <li class="text-muted">{{#str}} no_enrollment_methods,report_usercoursereports {{/str}}</li>
+                        {{/courseinfo.enrollment_methods}}
+                    </ul>
                 </div>
+
+                <div class="mt-4">
+                    <h4><i class="fa fa-layer-group text-primary"></i><span class="ml-2">{{#str}} groups {{/str}}</span></h4>
+                    <ul class="list-inline">
+                        {{#courseinfo.groups}}
+                            <li class="list-inline-item badge bg-secondary px-3 py-2 m-1">{{name}}</li>
+                        {{/courseinfo.groups}}
+                        {{^courseinfo.groups}}
+                            <li class="text-muted">{{#str}} nogroupsdefined,report_usercoursereports {{/str}}</li>
+                        {{/courseinfo.groups}}
+                    </ul>
+
+                </div>
+               
             </div>
 
             <div class="col-md-8">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><strong>{{#str}} fullnamecourse {{/str}}:</strong> 
-                        <a href="{{courseinfo.course_link}}">{{courseinfo.fullname}}</a>
+                <h4><i class="fa fa-book text-primary"></i><span class="ml-2">{{#str}} coursedetails {{/str}}</span></h4>
+                <ul class="list-group list-group-flush coursedetail-grid">
+                    <li class="list-group-item">
+                        <strong>{{#str}} fullnamecourse {{/str}}:</strong> 
+                        <span><a href="{{courseinfo.course_link}}"><span>{{courseinfo.fullname}}</span></a></span>
                     </li>
-                    <li class="list-group-item"><strong>{{#str}} shortnamecourse {{/str}}:</strong> {{courseinfo.shortname}}</li>
-                    <li class="list-group-item"><strong>{{#str}} coursecategory {{/str}}:</strong> 
-                        <a href="{{courseinfo.category_link}}">{{courseinfo.category_name}}</a>
+                    <li class="list-group-item">
+                        <strong>{{#str}} shortnamecourse {{/str}}:</strong>
+                        <span>{{courseinfo.shortname}}</span>
                     </li>
-                    <li class="list-group-item"><strong>{{#str}} coursevisibility {{/str}}:</strong> 
-                        {{#courseinfo.visible}}<span class="badge bg-success text-white p-2">{{#str}} show {{/str}}</span>{{/courseinfo.visible}}
-                        {{^courseinfo.visible}}<span class="badge bg-danger text-white p-2">{{#str}} hide {{/str}}</span>{{/courseinfo.visible}}
+                    <li class="list-group-item">
+                        <strong>{{#str}} coursecategory {{/str}}:</strong> 
+                        <span><a href="{{courseinfo.category_link}}"><span>{{courseinfo.category_name}}</span></a></span>
                     </li>
-                    <li class="list-group-item"><strong>{{#str}} startdate {{/str}}:</strong> {{courseinfo.course_startdate}}</li>
-                    <li class="list-group-item"><strong>{{#str}} enddate {{/str}}:</strong> {{courseinfo.course_enddate}}</li>
-                    <li class="list-group-item"><strong>{{#str}} createddate,report_usercoursereports {{/str}}:</strong> {{courseinfo.course_timecreated}}</li>
-                    <li class="list-group-item"><strong>{{#str}} modifieddate,report_usercoursereports {{/str}}:</strong> {{courseinfo.course_timemodified}}</li>
-                    <li class="list-group-item"><strong>{{#str}} type_format,plugin {{/str}}:</strong> {{courseinfo.course_formatname}}</li>
-                    <li class="list-group-item"><strong>{{#str}} total_enrolled_users,report_usercoursereports {{/str}}:</strong> {{courseinfo.count_enrolled_users}}</li>
-                    <li class="list-group-item"><strong>{{#str}} total_sections,report_usercoursereports {{/str}}:</strong> {{courseinfo.total_sections}}</li>
-                    <li class="list-group-item"><strong>{{#str}} total_activities,report_usercoursereports {{/str}}:</strong> {{courseinfo.count_activities}}</li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} coursevisibility {{/str}}:</strong> 
+                        <span>
+                        {{#courseinfo.visible}}
+                            <span class="badge bg-success text-white p-2">{{#str}} show {{/str}}</span>
+                        {{/courseinfo.visible}}
+                        {{^courseinfo.visible}}
+                            <span class="badge bg-danger text-white p-2">{{#str}} hide {{/str}}</span>
+                        {{/courseinfo.visible}}
+                        </span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} type_format,plugin {{/str}}:</strong>
+                        <span>{{courseinfo.course_formatname}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} groupmode,group {{/str}}:</strong>
+                        <span>{{courseinfo.groupmode}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} completion,completion {{/str}}:</strong>
+                        <span>
+                        {{#courseinfo.enablecompletion}}
+                            <span class="badge bg-success text-white p-2">{{#str}} yes {{/str}}</span>
+                        {{/courseinfo.enablecompletion}}
+                        {{^courseinfo.enablecompletion}}
+                            <span class="badge bg-danger text-white p-2">{{#str}} no {{/str}}</span>
+                        {{/courseinfo.enablecompletion}}
+                        </span>
+                    </li>
+                    {{#courseinfo.course_customfields}}
+                        <li class="list-group-item">
+                            <strong>{{name}}:</strong>
+                            <span>{{value}}</span>
+                        </li>
+                    {{/courseinfo.course_customfields}}
+                    <li class="list-group-item">
+                        <strong>{{#str}} maximumupload {{/str}}:</strong>
+                        <span>{{courseinfo.maxbytes}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} startdate {{/str}}:</strong>
+                        <span>{{courseinfo.course_startdate}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} enddate {{/str}}:</strong>
+                        <span>{{courseinfo.course_enddate}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} createddate,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.course_timecreated}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} modifieddate,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.course_timemodified}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} total_participants,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.count_enrolled_users}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} total_sections,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.total_sections}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} total_activities,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.count_activities}}</span>
+                    </li>
                 </ul>
             </div>
+
+
+        </div>
+        
+        <div class="mt-4">
+            <h4><i class="fa fa-info-circle me-2 text-primary"></i><span class="ml-2">{{#str}} coursesummary {{/str}}</span></h4>
+        
+                <div class="course-summary mt-3 text-muted collapsed-summary">
+                <p>{{{courseinfo.summary}}}</p>
+            </div>
+            
+            <button type="button" class="btn btn-primary readmore-btn d-none">
+                {{#str}} readmore,report_usercoursereports {{/str}}
+            </button>
         </div>
 
-        <div class="mt-4">
-            <h5><i class="fa fa-users-cog me-2 text-primary"></i>{{#str}} enrolmentmethods,report_usercoursereports {{/str}}</h5>
-            <ul class="list-inline">
-                {{#courseinfo.enrollment_methods}}
-                    <li class="text-white list-inline-item badge bg-info px-3 py-2 m-1">{{name}}</li>
-                {{/courseinfo.enrollment_methods}}
-            </ul>
-        </div>
+       
+    </div>
+</div>
 
-        <div class="mt-4">
-            <h5><i class="fa fa-layer-group me-2 text-primary"></i>{{#str}} groups {{/str}}</h5>
-            {{#courseinfo.groups}}
-                <ul class="list-inline">
-                    <li class="list-inline-item badge bg-secondary px-3 py-2 m-1">{{name}}</li>
-                </ul>
-            {{/courseinfo.groups}}
-            {{^courseinfo.groups}}
-                <p class="text-muted">{{#str}} nogroupsdefined,report_usercoursereports {{/str}}</p>
-            {{/courseinfo.groups}}
-        </div>
+
+<div class="card shadow-lg rounded-3 singlecourseparticipation mt-4">
+    <div class="card-body">
+       
     </div>
 </div>
