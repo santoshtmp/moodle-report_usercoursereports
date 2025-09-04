@@ -29,12 +29,10 @@ use report_usercoursereports\usercoursereports;
 
 // Get require config file.
 require_once(dirname(__FILE__) . '/../../config.php');
-require_once($CFG->libdir . '/adminlib.php');
 defined('MOODLE_INTERNAL') || die();
 
 // Access checks and Capability check.
 require_login(null, false);
-admin_externalpage_setup('report_usercoursereports');
 $context = \context_system::instance();
 if (!has_capability('report/usercoursereports:view', $context)) {
     throw new moodle_exception('invalidaccess', 'report_usercoursereports');
@@ -116,7 +114,7 @@ if ($filterform->is_cancelled()) {
 
 // Get the data and display.
 $contents = '';
-$contents .= usercoursereports::get_report_list($type, $pagepath);
+$contents .= usercoursereports::get_report_list($parameters);
 if ($type == 'user' && $parameters['id']) {
     $contents .= usercoursereports::get_singleuser_info($parameters['id']);
 } else if ($type == 'course' && $parameters['id']) {

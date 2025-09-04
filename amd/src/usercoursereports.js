@@ -20,7 +20,7 @@
  * @author     santoshtmp7
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core/ajax'], function($, Ajax) {
+define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
     'use strict';
 
     const filterAreaId = 'report-usercoursereports-filter-area';
@@ -37,7 +37,7 @@ define(['jquery', 'core/ajax'], function($, Ajax) {
         // Make AJAX call
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
-            args: {querystring: formquerystring}
+            args: { querystring: formquerystring }
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function(response) {
@@ -75,6 +75,38 @@ define(['jquery', 'core/ajax'], function($, Ajax) {
         });
     }
 
+    /**
+     * Check and handle course summary read more/less button toggle
+     */
+    function checkHandleCourseSummaryToggle() {
+        const readmorePromise = str.get_string('readmore', 'report_usercoursereports');
+        const showlessPromise = str.get_string('showless', 'report_usercoursereports');
+
+        Promise.all([readmorePromise, showlessPromise]).then(([readmoreText, showlessText]) => {
+            document.querySelectorAll(".singlecoursedetails").forEach(card => {
+                const summary = card.querySelector(".course-summary");
+                const btn = card.querySelector(".readmore-btn");
+
+                if (!summary || !btn) {
+                    return;
+                }
+
+                if (summary.scrollHeight > summary.clientHeight) {
+                    btn.classList.remove("d-none");
+                }
+
+                btn.addEventListener("click", () => {
+                    summary.classList.toggle("collapsed-summary");
+                    btn.textContent = summary.classList.contains("collapsed-summary")
+                        ? readmoreText
+                        : showlessText;
+                });
+            });
+        });
+
+    }
+
+
     return {
         init: function() {
             // Remove .col-md-3 and .col-md-9 from divs inside .usercoursereports-filter-field
@@ -87,7 +119,10 @@ define(['jquery', 'core/ajax'], function($, Ajax) {
                 document.getElementById('id_perpage').setAttribute('type', 'number');
             }
 
-            // On form submit
+            // Handle course summary read more/less button toggle
+            checkHandleCourseSummaryToggle();
+
+            // Filter on form submit
             $('#usercoursereports-filter').on('submit', function(e) {
                 const clickedButton = $(this).find('input[type=submit]:focus').attr('name');
                 if (clickedButton !== 'cancel') {
@@ -97,7 +132,7 @@ define(['jquery', 'core/ajax'], function($, Ajax) {
                 }
             });
 
-            // Pagination.
+            // Filter on Pagination number click.
             $(document).on('click', '#' + filterAreaId + ' nav.pagination a.page-link', function(e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
@@ -106,7 +141,7 @@ define(['jquery', 'core/ajax'], function($, Ajax) {
                 }
             });
 
-            // Table column header for sorting.
+            // Filter on table column header for sorting click.
             $(document).on('click', '#' + filterAreaId + ' thead th.header a.sort-link', function(e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
@@ -114,6 +149,17 @@ define(['jquery', 'core/ajax'], function($, Ajax) {
                     getFilterReportTable(formquerystring);
                 }
             });
+
+            // Filter on single select field change
+            $('#usercoursereports-single-search select#id_id').on('change', function() {
+                var selectedValue = $(this).val();
+                if (selectedValue) {
+                    var form = $(this).closest('form');
+                    form.attr('data-form-dirty', false);
+                    form.submit();
+                }
+            });
+
         }
     };
 });
