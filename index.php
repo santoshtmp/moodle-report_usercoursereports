@@ -80,8 +80,11 @@ $PAGE->requires->js_call_amd(
     'report_usercoursereports/usercoursereports',
     'init',
     [
-        'urlpath' => $pagepath,
-        'type' => $type,
+        [
+            'urlpath' => $pagepath,
+            'type' => $type,
+            'pagereseturl' => $pagereseturl->out(false)
+        ]
     ]
 );
 // Load filter.
@@ -109,10 +112,10 @@ if ($type == 'user' && $parameters['id']) {
     $contents .= usercoursereports::get_singlecourse_info($parameters);
 } else if ($type == 'course') {
     $contents .= $filterform->render();
-    $contents .= tablereport::get_coursereport_table($pageurl, $parameters);
+    $contents .= tablereport::get_coursereport_table($parameters);
 } else if ($type == 'user') {
     $contents .= $filterform->render();
-    $contents .= tablereport::get_userinfo_table($pageurl, $parameters);
+    $contents .= tablereport::get_userinfo_table($parameters);
 }
 
 // Output Content.

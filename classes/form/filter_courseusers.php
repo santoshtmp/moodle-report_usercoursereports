@@ -96,6 +96,11 @@ class filter_courseusers extends \moodleform {
         // Close two-column grid.
         $mform->addElement('html', '</div>');
 
+        // ... reset table
+        $mform->addElement('hidden', 'treset');
+        $mform->setType('treset', PARAM_INT);
+        $mform->setDefault('treset', 1);
+
         // Action btn.
         $buttonarray = [];
         $buttonarray[] = $mform->createElement(
@@ -104,7 +109,12 @@ class filter_courseusers extends \moodleform {
             get_string('applyfilter', 'report_usercoursereports'),
             ['id' => 'applyfilter', 'class' => 'apply-filter form-submit mt-4']
         );
-        $buttonarray[] = $mform->createElement('cancel', '', get_string('clear'), ['id' => 'clearfilter', 'class' => 'clear-filter form-submit mt-4' ]);
+        $buttonarray[] = $mform->createElement(
+            'cancel',
+            '',
+            get_string('clear'),
+            ['id' => 'clearfilter', 'class' => 'clear-filter form-submit mt-4']
+        );
         $mform->addGroup($buttonarray, 'buttonar', '', [''], false);
     }
 }
