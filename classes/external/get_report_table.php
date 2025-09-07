@@ -147,9 +147,9 @@ class get_report_table extends external_api {
                 } else if ($type == 'course' && $parameters['id']) {
                     $filterdata['reporttable'] = tablereport::course_enrolled_users($parameters);
                 } else if ($type == 'course') {
-                    $filterdata['reporttable'] = tablereport::get_coursereport_table($pageurl, $parameters);
+                    $filterdata['reporttable'] = tablereport::get_coursereport_table($parameters);
                 } else if ($type == 'user') {
-                    $filterdata['reporttable'] = tablereport::get_userinfo_table($pageurl, $parameters);
+                    $filterdata['reporttable'] = tablereport::get_userinfo_table($parameters);
                 }
             }
         } catch (\Throwable $th) {

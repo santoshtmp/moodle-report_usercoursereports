@@ -373,10 +373,15 @@ class user_data_handler {
         $courseids  = $parameters['courseids'] ?? [];
         $sortby     = $parameters['sortby'] ?? 'timemodified';
         $sortdir    = $parameters['sortdir'] ?? SORT_DESC;
+        $download   = $parameters['download'] ?? 0;
 
         // ... pagination
-        $limitnum   = ($perpage > 0) ? $perpage : 50;
-        $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
+        if ($download) {
+            $limitnum = $limitfrom = 0;
+        } else {
+            $limitnum   = ($perpage > 0) ? $perpage : 50;
+            $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
+        }
 
         // ... SQL fragments
         $jointable = [];
@@ -522,39 +527,24 @@ class user_data_handler {
         // ... create return value
         $alluserinfo = [];
         $datadisplaycount = $limitfrom;
-        foreach ($records as $record) {
-            $datadisplaycount++;
-            if ($alldetail) {
-                $recordinfo = self::get_user_info($record->id, false);
-            } else {
-                $recordinfo = [];
-                $recordinfo['id'] = $record->id;
-                $recordinfo['username'] = $record->username;
-                $recordinfo['email'] = $record->email;
-                $recordinfo['firstname'] = $record->firstname;
-                $recordinfo['lastname'] = $record->lastname;
-                $recordinfo['city'] = $record->city;
-                $recordinfo['lastaccess'] = self::get_user_date_time($record->lastaccess, '');
-                $recordinfo['suspended'] = $record->suspended;
-                $recordinfo['confirmed'] = $record->confirmed;
-                $recordinfo['profile_link'] = (new moodle_url('/user/profile.php', ['id' => $record->id]))->out();
-                $recordinfo['profileimage_link'] = self::get_user_profile_image($DB->get_record('user', ['id' => $record->id]));
-                $recordinfo['count_enrolled_courses'] = $record->enrolledcourses;
-                $recordinfo['roles'] = self::get_all_roles($record->id);
+        if ($alldetail) {
+            foreach ($records as $record) {
+                $datadisplaycount++;
+                $recordinfo = self::get_user_info($record->id, true, false);
+                $alluserinfo['data'][] = $recordinfo;
             }
-            $recordinfo['sn'] = $datadisplaycount;
-            $alluserinfo['data'][] = $recordinfo;
+        } else {
+            $alluserinfo['data'] = $records;
         }
-
         // ... meta information
         $alluserinfo['meta'] = [
             'totalrecords' => $totalrecords,
-            'totalpage' => ceil($totalrecords / $limitnum),
+            'totalpage' => ($limitnum > 0) ? ceil($totalrecords / $limitnum) : 1,
             'pagenumber' => $pagenumber,
             'perpage' => $limitnum,
-            'datadisplaycount' => $datadisplaycount,
-            'datafrom' => ($datadisplaycount) ? $limitfrom + 1 : $limitfrom,
-            'datato' => $datadisplaycount,
+            'datadisplaycount' => ($records) ? count($records) : 0,
+            'datafrom' => ($records) ? $limitfrom + 1 : 0,
+            'datato' => ($records) ? count($records) + $limitfrom : 0,
         ];
 
         return $alluserinfo;
@@ -575,7 +565,7 @@ class user_data_handler {
         $enrolmethod    = $parameters['enrolmethod'] ?? '';
         $sortby         = $parameters['sortby'] ?? 'timemodified';
         $sortdir        = $parameters['sortdir'] ?? SORT_DESC;
-        $download = $parameters['download'] ?? 0;
+        $download       = $parameters['download'] ?? 0;
 
         // var_dump($roleids);
         // die;

@@ -371,23 +371,28 @@ class course_data_handler {
     /**
      * Get course enrolment plugin instance
      * @param int $courseid
+     * @param bool $returnonlyname
      * @return array
      */
-    public static function get_course_enrollmentmethods($courseid) {
+    public static function get_course_enrollmentmethods($courseid, $returnonlyname = false) {
         global $DB;
         $enrollmentmethods = [];
         $enrolinstances = enrol_get_instances((int)$courseid, true);
         foreach ($enrolinstances as $key => $courseenrolinstance) {
             $enrolplugin = enrol_get_plugin($courseenrolinstance->enrol);
-            $instance = [
-                'enrol' => $courseenrolinstance->enrol,
-                'name' => $enrolplugin->get_instance_name($courseenrolinstance),
-                'cost' => $courseenrolinstance->cost,
-                'currency' => $courseenrolinstance->currency,
-                'roleid' => $courseenrolinstance->roleid,
-                'rolename' => role_get_name($DB->get_record('role', ['id' => $courseenrolinstance->roleid])),
-            ];
-            $enrollmentmethods[] = $instance;
+            if ($returnonlyname) {
+                $enrollmentmethods[] = $enrolplugin->get_instance_name($courseenrolinstance);
+            } else {
+                $instance = [
+                    'enrol' => $courseenrolinstance->enrol,
+                    'name' => $enrolplugin->get_instance_name($courseenrolinstance),
+                    'cost' => $courseenrolinstance->cost,
+                    'currency' => $courseenrolinstance->currency,
+                    'roleid' => $courseenrolinstance->roleid,
+                    'rolename' => role_get_name($DB->get_record('role', ['id' => $courseenrolinstance->roleid])),
+                ];
+                $enrollmentmethods[] = $instance;
+            }
         }
         return $enrollmentmethods;
     }
@@ -530,10 +535,15 @@ class course_data_handler {
         $startdateto        = (int)($parameters['startdateto'] ?? 0);
         $sortby             = $parameters['sortby'] ?? 'timemodified';
         $sortdir            = $parameters['sortdir'] ?? SORT_DESC;
+        $download           = $parameters['download'] ?? 0;
 
         // ... pagination
-        $limitnum   = ($perpage > 0) ? $perpage : 50;
-        $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
+        if ($download) {
+            $limitnum = $limitfrom = 0;
+        } else {
+            $limitnum   = ($perpage > 0) ? $perpage : 50;
+            $limitfrom  = ($pagenumber > 0) ? $limitnum * $pagenumber : 0;
+        }
 
         // ... SQL fragments
         $jointable = [];
@@ -613,6 +623,8 @@ class course_data_handler {
         $coursesortfields = ['fullname', 'shortname', 'startdate', 'timecreated', 'timemodified'];
         if (in_array($sortby, $coursesortfields)) {
             $sortby = 'c.' . $sortby;
+        } else if ($sortby == 'coursename') {
+            $sortby = 'c.fullname';
         } else if ($sortby == 'category') {
             $sortby = 'cc.name';
         } else if ($sortby == 'participants') {
@@ -663,43 +675,24 @@ class course_data_handler {
         // ... create return value
         $allcoursesinfo = [];
         $datadisplaycount = $limitfrom;
-        foreach ($records as $record) {
-            $datadisplaycount++;
-            if ($alldetail) {
+        if ($alldetail) {
+            foreach ($records as $record) {
+                $datadisplaycount++;
                 $recordinfo = self::get_course_info($record->id, true, false);
-            } else {
-                $recordinfo = [];
-                $recordinfo['id'] = $record->id;
-                $recordinfo['categoryid'] = $record->category;
-                $recordinfo['shortname'] = format_string($record->shortname);
-                $recordinfo['fullname'] = format_string($record->fullname);
-                $recordinfo['category_name'] = format_string(($record->category_name));
-                $recordinfo['course_link'] = (new \moodle_url('/course/view.php', ['id' => $record->id]))->out();
-                $recordinfo['category_link'] = (new \moodle_url(
-                    '/course/index.php',
-                    ['categoryid' => $record->category]
-                ))->out();
-                $recordinfo['thumbnail_link'] = self::get_course_image($record, true);
-                $recordinfo['course_format'] = $record->format;
-                $recordinfo['visible'] = $record->visible;
-                $recordinfo['count_participants'] = $record->participants;
-                $recordinfo['course_startdate'] = user_data_handler::get_user_date_time($record->startdate);
-                $recordinfo['course_timecreated'] = user_data_handler::get_user_date_time($record->timecreated);
-                $recordinfo['enrollment_methods'] = self::get_course_enrollmentmethods($record->id);
+                $allcoursesinfo['data'][] = $recordinfo;
             }
-            $recordinfo['sn'] = $datadisplaycount;
-
-            $allcoursesinfo['data'][] = $recordinfo;
+        } else {
+            $allcoursesinfo['data'] = $records;
         }
         // ... meta information
         $allcoursesinfo['meta'] = [
             'totalrecords' => $totalrecords,
-            'totalpage' => ceil($totalrecords / $limitnum),
+            'totalpage' => ($limitnum > 0) ? ceil($totalrecords / $limitnum) : 1,
             'pagenumber' => $pagenumber,
             'perpage' => $limitnum,
-            'datadisplaycount' => $datadisplaycount,
-            'datafrom' => ($datadisplaycount) ? $limitfrom + 1 : $limitfrom,
-            'datato' => $datadisplaycount,
+            'datadisplaycount' => ($records) ? count($records) : 0,
+            'datafrom' => ($records) ? $limitfrom + 1 : 0,
+            'datato' => ($records) ? count($records) + $limitfrom : 0,
         ];
 
         return $allcoursesinfo;

@@ -20,9 +20,10 @@
  * @author     santoshtmp7
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
+define(['jquery', 'core/ajax', 'core/str'], function ($, Ajax, str) {
     'use strict';
 
+    const filterFormId = 'usercoursereports-filter';
     const filterAreaId = 'report-usercoursereports-filter-area';
     const applyFilterBtnId = 'applyfilter';
 
@@ -37,17 +38,17 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
         // Make AJAX call
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
-            args: {querystring: formquerystring}
+            args: { querystring: formquerystring }
         };
         const ajaxrequest = Ajax.call([request])[0];
-        ajaxrequest.done(function(response) {
+        ajaxrequest.done(function (response) {
             // Update report filter table content
             if (response.status && response.reporttable) {
                 window.history.replaceState('', 'url', response.pageurl);
                 $('#' + filterAreaId).replaceWith(response.reporttable);
             }
             // Field validation and error
-            $('#usercoursereports-filter [id^=id_error_]').html('').hide();
+            $('#' + filterFormId + ' [id^=id_error_]').html('').hide();
             if (!response.is_validated) {
                 const validationErrors = response.validation_errors || [];
                 validationErrors.forEach(element => {
@@ -66,14 +67,14 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             }
 
         });
-        ajaxrequest.fail(function(response) {
+        ajaxrequest.fail(function (response) {
             window.console.log(response);
             $('#error-response-message').remove();
             $('#' + filterAreaId).prepend(
                 '<p id="error-response-message" class="invalid-feedback" style="display:block;">' + response.message + '</p>'
             );
         });
-        ajaxrequest.always(function() {
+        ajaxrequest.always(function () {
             $('#' + filterAreaId).removeAttr('aria-busy');
             $('#' + applyFilterBtnId).prop('disabled', false);
             $('#filter-loading-wrapper').hide();
@@ -113,9 +114,9 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
 
 
     return {
-        init: function() {
+        init: function (pagedata) {
             // Remove .col-md-3 and .col-md-9 from divs inside .usercoursereports-filter-field
-            $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function() {
+            $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function () {
                 $(this).removeClass('col-md-3 col-md-9');
             });
 
@@ -128,7 +129,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             checkHandleCourseSummaryToggle();
 
             // Filter on form submit
-            $('#usercoursereports-filter').on('submit', function(e) {
+            $('#' + filterFormId).on('submit', function (e) {
                 const clickedButton = $(this).find('input[type=submit]:focus').attr('name');
                 if (clickedButton !== 'cancel') {
                     e.preventDefault();
@@ -138,7 +139,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             });
 
             // Filter on Pagination number click.
-            $(document).on('click', '#' + filterAreaId + ' nav.pagination a.page-link', function(e) {
+            $(document).on('click', '#' + filterAreaId + ' nav.pagination a.page-link', function (e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
@@ -147,7 +148,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             });
 
             // Filter on table column header for sorting click.
-            $(document).on('click', '#' + filterAreaId + ' thead th.header a[data-sortable="1"]', function(e) {
+            $(document).on('click', '#' + filterAreaId + ' thead th.header a[data-sortable="1"]', function (e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
@@ -155,17 +156,31 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 }
             });
 
-            // Filter the table on reset button click
-            $(document).on('click', '#' + filterAreaId + ' .resettable a', function(e) {
+            // Filter the table on reset link click
+            $(document).on('click', '#' + filterAreaId + ' .resettable a', function (e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
                     getFilterReportTable(formquerystring);
+                    $("#" + filterFormId)[0].reset();
+                }
+            });
+
+            // Filter the table clear btn click
+            $(document).on('click', '#' + filterFormId + ' #clearfilter', function (e) {
+                const formquerystring = (pagedata.pagereseturl).split('?')[1];
+                if (formquerystring) {
+                    getFilterReportTable(formquerystring);
+                    $("#" + filterFormId)[0].reset();
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
                 }
             });
 
             // Filter on single select field change
-            $('#usercoursereports-single-search select#id_id').on('change', function() {
+            $('#usercoursereports-single-search select#id_id').on('change', function () {
                 var selectedValue = $(this).val();
                 if (selectedValue) {
                     var form = $(this).closest('form');
