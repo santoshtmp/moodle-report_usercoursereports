@@ -67,7 +67,7 @@ class filter_form extends \moodleform {
             ($type == 'course' &&  ($categoryids || $courseformat || $coursevisibility || $enrolmethod ||
                 $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
             ($type == 'user' &&  ($courseids || $roleids || $suspended || $confirmed)) ||
-            ($search || $perpage != 50)
+            ($search || ($perpage && $perpage != 50))
         ) {
             $filterfieldwrapperexpanded = true;
         }
@@ -105,7 +105,7 @@ class filter_form extends \moodleform {
                 'autocomplete',
                 'roleids',
                 get_string('roles'),
-                \report_usercoursereports\user_data_handler::get_all_roles(0, [7, 8]),
+                \report_usercoursereports\user_data_handler::get_all_roles(0, [], ['frontpage', 'user', 'guest']),
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allroles', 'report_usercoursereports'),

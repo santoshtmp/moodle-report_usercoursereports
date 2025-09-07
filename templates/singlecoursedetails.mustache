@@ -144,15 +144,19 @@
                         <span>{{courseinfo.course_timemodified}}</span>
                     </li>
                     <li class="list-group-item">
-                        <strong>{{#str}} total_participants,report_usercoursereports {{/str}}:</strong>
+                        <strong>{{#str}} totalparticipants,report_usercoursereports {{/str}}:</strong>
                         <span>{{courseinfo.count_enrolled_users}}</span>
                     </li>
                     <li class="list-group-item">
-                        <strong>{{#str}} total_sections,report_usercoursereports {{/str}}:</strong>
+                        <strong>{{#str}} totalactiveparticipants,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.count_enrolled_users}}</span>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>{{#str}} totalcoursesections,report_usercoursereports {{/str}}:</strong>
                         <span>{{courseinfo.total_sections}}</span>
                     </li>
                     <li class="list-group-item">
-                        <strong>{{#str}} total_activities,report_usercoursereports {{/str}}:</strong>
+                        <strong>{{#str}} totalcourseactivities,report_usercoursereports {{/str}}:</strong>
                         <span>{{courseinfo.count_activities}}</span>
                     </li>
                 </ul>
@@ -180,6 +184,8 @@
 
 <div class="card shadow-lg rounded-3 singlecourseparticipation mt-4">
     <div class="card-body">
-       
+        {{{filtercourseusers}}}
+        {{{enrolleduserTable}}}
     </div>
 </div>
+
