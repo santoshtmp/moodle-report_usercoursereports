@@ -37,7 +37,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
         // Make AJAX call
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
-            args: { querystring: formquerystring }
+            args: {querystring: formquerystring}
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function(response) {
@@ -58,15 +58,20 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 });
             }
             // Error message show when status is false.
+            $('#error-response-message').remove();
             if (!response.status && response.message) {
-                $('#error-response-message').remove();
                 $('#' + filterAreaId).prepend(
                     '<p id="error-response-message" class="invalid-feedback" style="display:block;">' + response.message + '</p>'
                 );
             }
+
         });
         ajaxrequest.fail(function(response) {
             window.console.log(response);
+            $('#error-response-message').remove();
+            $('#' + filterAreaId).prepend(
+                '<p id="error-response-message" class="invalid-feedback" style="display:block;">' + response.message + '</p>'
+            );
         });
         ajaxrequest.always(function() {
             $('#' + filterAreaId).removeAttr('aria-busy');
@@ -142,7 +147,16 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             });
 
             // Filter on table column header for sorting click.
-            $(document).on('click', '#' + filterAreaId + ' thead th.header a.sort-link', function(e) {
+            $(document).on('click', '#' + filterAreaId + ' thead th.header a[data-sortable="1"]', function(e) {
+                e.preventDefault();
+                const formquerystring = $(this).attr('href').split('?')[1];
+                if (formquerystring) {
+                    getFilterReportTable(formquerystring);
+                }
+            });
+
+            // Filter the table on reset button click
+            $(document).on('click', '#' + filterAreaId + ' .resettable a', function(e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {

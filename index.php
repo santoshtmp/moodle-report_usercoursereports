@@ -25,6 +25,7 @@
  */
 
 use report_usercoursereports\form\filter_form;
+use report_usercoursereports\tablereport;
 use report_usercoursereports\usercoursereports;
 
 // Get require config file.
@@ -43,37 +44,24 @@ if (!$type || !in_array($type, ['course', 'user'])) {
 }
 
 // Get request parameters (with defaults).
-$parameters = [
-    'type'              => $type,
-    'id'                => optional_param('id', 0, PARAM_INT),
-    'search'            => optional_param('search', '', PARAM_TEXT),
-    'page'              => optional_param('page', 0, PARAM_INT),
-    'perpage'           => optional_param('perpage', 50, PARAM_INT),
-    'courseformat'      => optional_param('courseformat', '', PARAM_TEXT),
-    'coursevisibility'  => optional_param('coursevisibility', '', PARAM_TEXT),
-    'enrolmethod'       => optional_param('enrolmethod', '', PARAM_TEXT),
-    'createdfrom'       => optional_param_array('createdfrom', 0, PARAM_INT),
-    'createdto'         => optional_param_array('createdto', 0, PARAM_INT),
-    'startdatefrom'     => optional_param_array('startdatefrom', 0, PARAM_INT),
-    'startdateto'       => optional_param_array('startdateto', 0, PARAM_INT),
-    'categoryids'       => optional_param_array('categoryids', 0, PARAM_INT),
-    'courseids'         => optional_param_array('courseids', 0, PARAM_INT),
-    'roleids'           => optional_param_array('roleids', 0, PARAM_INT),
-    'suspended'         => optional_param('suspended', '', PARAM_TEXT),
-    'confirmed'         => optional_param('confirmed', '', PARAM_TEXT),
-    'download'          => optional_param('download', 0, PARAM_INT),
-    'sortby'            => optional_param('sortby', 'timemodified', PARAM_TEXT),
-    'sortdir'           => optional_param('sortdir', SORT_DESC, PARAM_INT),
-];
+$parameters = usercoursereports::get_params();
 
 // Prepare the page information.
 $pagepath       = '/report/usercoursereports/index.php';
 $urlparams      = usercoursereports::urlparam($parameters);
+$urlbaseparams = [];
+$urlbaseparams['type'] = $type;
+if ($parameters['id']) {
+    $urlbaseparams['id'] = $parameters['id'];
+}
+$pageurl        = new moodle_url($pagepath, $urlparams);
+$pagereseturl    = new moodle_url($pagepath, $urlbaseparams);
+$pagetitle     = get_string('pluginname', 'report_usercoursereports');
+// Add more parameters.
 $parameters['pagepath'] = $pagepath;
 $parameters['urlparams'] = $urlparams;
-$pageurl        = new moodle_url($pagepath, $urlparams);
-$redirecturl    = new moodle_url($pagepath, ['type' => $type]);
-$pagetitle     = get_string('pluginname', 'report_usercoursereports');
+$parameters['pageurl'] = $pageurl->out(false);
+$parameters['pagereseturl'] = $pagereseturl->out(false);
 
 // Setup page information.
 $PAGE->set_context($context);
@@ -98,7 +86,7 @@ $PAGE->requires->js_call_amd(
 );
 // Load filter.
 $filterform = new filter_form(
-    $redirecturl,
+    $pagereseturl,
     $parameters,
     'GET',
     '',
@@ -109,7 +97,7 @@ $filterform = new filter_form(
     ]
 );
 if ($filterform->is_cancelled()) {
-    redirect($redirecturl);
+    redirect($pagereseturl);
 }
 
 // Get the data and display.
@@ -121,10 +109,10 @@ if ($type == 'user' && $parameters['id']) {
     $contents .= usercoursereports::get_singlecourse_info($parameters);
 } else if ($type == 'course') {
     $contents .= $filterform->render();
-    $contents .= usercoursereports::get_course_info_table($pageurl, $parameters);
+    $contents .= tablereport::get_coursereport_table($pageurl, $parameters);
 } else if ($type == 'user') {
     $contents .= $filterform->render();
-    $contents .= usercoursereports::get_user_info_table($pageurl, $parameters);
+    $contents .= tablereport::get_userinfo_table($pageurl, $parameters);
 }
 
 // Output Content.

@@ -517,7 +517,7 @@ class course_data_handler {
     public static function get_all_course_info($parameters, $alldetail = false) {
         global $DB;
         // ... get parameter
-        $pagenumber         = (int)($parameters['page'] ?? 0);
+        $pagenumber         = (int)($parameters['spage'] ?? 0);
         $perpage            = (int)($parameters['perpage'] ?? 50);
         $searchcourse       = trim($parameters['search'] ?? '');
         $categoryids        = $parameters['categoryids'] ?? [];
