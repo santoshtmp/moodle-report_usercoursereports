@@ -120,7 +120,7 @@ class usercoursereports {
      * @return string HTML output of the report switcher.
      */
     public static function get_report_list($parameters) {
-        $type = $parameters['type']; // ... 'course' or 'user'
+        $type = $parameters['type'];
         $pagepath = $parameters['pagepath'] ?? '/report/usercoursereports/index.php';
         $contents = '';
         $contents .= html_writer::start_tag(
@@ -144,7 +144,7 @@ class usercoursereports {
 
         if ($parameters['id']) {
             $singlesearch = new singlesearch(null, ['type' => $type], 'get', '', ['id' => 'usercoursereports-single-search']);
-            $contents .=  $singlesearch->render();
+            $contents .= $singlesearch->render();
         }
         $contents .= html_writer::end_tag('div');
         $contents .= html_writer::end_tag('div');

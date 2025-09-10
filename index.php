@@ -83,8 +83,8 @@ $PAGE->requires->js_call_amd(
         [
             'urlpath' => $pagepath,
             'type' => $type,
-            'pagereseturl' => $pagereseturl->out(false)
-        ]
+            'pagereseturl' => $pagereseturl->out(false),
+        ],
     ]
 );
 // Load filter.

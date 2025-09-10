@@ -33,16 +33,20 @@ use stdClass;
 
 /**
  * Class tablereport
- * 
+ *
  * @package    report_usercoursereports
  * @copyright  2025 santoshtmp <https://santoshmagar.com.np/>
  * @author     santoshtmp
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * 
+ *
  */
 class tablereport {
 
-    /** Default number of records per page. */
+    /**
+     * Default number of records per page.
+     *
+     * @var int
+     */
     public static $defaultperpage = 50;
 
     /**
@@ -65,9 +69,20 @@ class tablereport {
         $summary->datafrom = $datafrom;
         $summary->datato = $datato;
         $summary->datatotal = $datatotalrecords;
-        // Table information setup
+        // Table information setup.
         $tablename = 'course-report-table';
-        $tablecolumns = ['sn', 'coursename', 'category', 'participants', 'format', 'visible', 'enrol', 'startdate', 'timecreated', 'action'];
+        $tablecolumns = [
+            'sn',
+            'coursename',
+            'category',
+            'participants',
+            'format',
+            'visible',
+            'enrol',
+            'startdate',
+            'timecreated',
+            'action',
+        ];
         $tableheaders = [
             get_string('sn', 'report_usercoursereports'),
             get_string('fullname'),
@@ -80,13 +95,13 @@ class tablereport {
             get_string('createddate', 'report_usercoursereports'),
             get_string('action'),
         ];
-        $col_sorting = ['coursename', 'category', 'participants', 'startdate', 'timecreated'];
+        $colsorting = ['coursename', 'category', 'participants', 'startdate', 'timecreated'];
         $tableattributes = [
             'id' => $tablename,
             'class' => 'generaltable generalbox',
         ];
 
-        // Initialize table
+        // Initialize table.
         $table = new usercoursereport_flextablelib($tablename);
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
@@ -96,7 +111,7 @@ class tablereport {
         $table->pagesize($parameters['perpage'], $datatotalrecords);
         $table->sortable(true);
         foreach ($tablecolumns as $col) {
-            if (!in_array($col, $col_sorting)) {
+            if (!in_array($col, $colsorting)) {
                 $table->no_sorting($col);
             }
         }
@@ -117,17 +132,17 @@ class tablereport {
             ]
         );
 
-        // Reset handling
+        // Reset handling.
         if (isset($parameters['treset']) && $parameters['treset'] == 1) {
             $table->mark_table_to_reset();
         }
-        // Download handling
+        // Download handling.
         $table->show_download_buttons_at([TABLE_P_BOTTOM]);
         if ($table->is_downloading($download, $tablename, $tablename . '-' . time())) {
             raise_memory_limit(MEMORY_EXTRA);
         }
 
-        // Setup table
+        // Setup table.
         $table->setup();
         ob_start();
         foreach ($reportrecords['data'] as $record) {
@@ -160,14 +175,14 @@ class tablereport {
                         ),
                     ['class' => 'course-link d-flex justify-content-start']
                 );
-                $row[] =  html_writer::link(
+                $row[] = html_writer::link(
                     new \moodle_url('/course/index.php', ['categoryid' => $record->category]),
                     format_string($record->category_name)
                 );
                 $row[] = $record->participants;
                 $row[] = get_string('pluginname', 'format_' . $record->format);
                 $row[] = $record->visible ? get_string('show') : get_string('hide');
-                $row[] =  html_writer::alist(
+                $row[] = html_writer::alist(
                     course_data_handler::get_course_enrollmentmethods($record->id, true),
                     ['style' => 'list-style: none; padding-left: 0; margin: 0;'],
                 );
@@ -232,9 +247,18 @@ class tablereport {
         $summary->datafrom = $datafrom;
         $summary->datato = $datato;
         $summary->datatotal = $datatotalrecords;
-        // Table information setup
+        // Table information setup.
         $tablename = 'user-report-table';
-        $tablecolumns = ['sn', 'firstname', 'email', 'city', 'roles', 'enrolledcourses', 'lastaccess', 'action'];
+        $tablecolumns = [
+            'sn',
+            'firstname',
+            'email',
+            'city',
+            'roles',
+            'enrolledcourses',
+            'lastaccess',
+            'action',
+        ];
         $tableheaders = [
             get_string('sn', 'report_usercoursereports'),
             get_string('fullname'),
@@ -245,12 +269,12 @@ class tablereport {
             get_string('lastaccess', 'report_usercoursereports'),
             get_string('action'),
         ];
-        $col_sorting = ['firstname', 'email', 'city', 'enrolledcourses', 'lastaccess'];
+        $colsorting = ['firstname', 'email', 'city', 'enrolledcourses', 'lastaccess'];
         $tableattributes = [
             'id' => $tablename,
             'class' => 'generaltable generalbox',
         ];
-        // Initialize table
+        // Initialize table.
         $table = new usercoursereport_flextablelib($tablename);
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
@@ -260,7 +284,7 @@ class tablereport {
         $table->pagesize($parameters['perpage'], $datatotalrecords);
         $table->sortable(true);
         foreach ($tablecolumns as $col) {
-            if (!in_array($col, $col_sorting)) {
+            if (!in_array($col, $colsorting)) {
                 $table->no_sorting($col);
             }
         }
@@ -281,17 +305,17 @@ class tablereport {
             ]
         );
 
-        // Reset handling
+        // Reset handling.
         if (isset($parameters['treset']) && $parameters['treset'] == 1) {
             $table->mark_table_to_reset();
         }
-        // Download handling
+        // Download handling.
         $table->show_download_buttons_at([TABLE_P_BOTTOM]);
         if ($table->is_downloading($download, $tablename, $tablename . '-' . time())) {
             raise_memory_limit(MEMORY_EXTRA);
         }
 
-        // Setup table
+        // Setup table.
         $table->setup();
         ob_start();
         foreach ($reportrecords['data'] as $record) {
@@ -308,7 +332,7 @@ class tablereport {
                 $row[] = (new moodle_url($parameters['pagepath'], ['type' => 'user', 'id' => $record->id]))->out(false);
             } else {
                 $row[] = $datafrom++;
-                $row[] =  html_writer::link(
+                $row[] = html_writer::link(
                     new moodle_url('/user/profile.php', ['id' => $record->id]),
                     html_writer::img(
                         user_data_handler::get_user_profile_image($record->id),
@@ -481,8 +505,18 @@ class tablereport {
         $summary->datafrom = $datafrom;
         $summary->datato = $datato;
         $summary->datatotal = $datatotal;
-        // Table information setup
-        $tablecolumns = ['sn', 'firstname', 'courserole', 'groups', 'progress', 'enrolldate', 'enrollmethod', 'lastcourseaccess', 'status'];
+        // Table information setup.
+        $tablecolumns = [
+            'sn',
+            'firstname',
+            'courserole',
+            'groups',
+            'progress',
+            'enrolldate',
+            'enrollmethod',
+            'lastcourseaccess',
+            'status',
+        ];
         $tableheaders = [
             get_string('sn', 'report_usercoursereports'),
             get_string('fullname'),
@@ -494,13 +528,13 @@ class tablereport {
             get_string('lastcourseaccess'),
             get_string('status'),
         ];
-        $no_sorting = ['sn', 'courserole', 'groups', 'progress', 'enrolldate', 'enrollmethod', 'status'];
+        $nosorting = ['sn', 'courserole', 'groups', 'progress', 'enrolldate', 'enrollmethod', 'status'];
         $tablename = 'course-enrolled-users';
         $tableattributes = [
             'id' => $tablename,
             'class' => 'generaltable generalbox',
         ];
-        // Initialize table
+        // Initialize table.
         $table = new usercoursereport_flextablelib($tablename);
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
@@ -509,7 +543,7 @@ class tablereport {
         $table->set_page_number($parameters['spage'] + 1);
         $table->pagesize($parameters['perpage'], $reportrecords['meta']['totalrecords']);
         $table->sortable(true);
-        foreach ($no_sorting as $ns) {
+        foreach ($nosorting as $ns) {
             $table->no_sorting($ns);
         }
         foreach ($tablecolumns as $col) {
@@ -528,17 +562,17 @@ class tablereport {
                 TABLE_VAR_PAGE   => 'spage',
             ]
         );
-        // Reset handling
+        // Reset handling.
         if (isset($parameters['treset']) && $parameters['treset'] == 1) {
             $table->mark_table_to_reset();
         }
-        // Download handling
+        // Download handling.
         $table->show_download_buttons_at([TABLE_P_BOTTOM]);
         if ($table->is_downloading($download, $tablename . "-" . $courseid, $tablename . "-" . $courseid)) {
             raise_memory_limit(MEMORY_EXTRA);
         }
 
-        // Setup table
+        // Setup table.
         $table->setup();
         ob_start();
         foreach ($reportrecords['data'] as $record) {
@@ -547,8 +581,8 @@ class tablereport {
             $status = [];
 
             $statusvalues = enrolment::enrolment_values();
-            $user_course_enrolments = user_data_handler::get_user_course_enrolments($record->id, $courseid);
-            foreach ($user_course_enrolments as $key => $enrolinstance) {
+            $usercourseenrolments = user_data_handler::get_user_course_enrolments($record->id, $courseid);
+            foreach ($usercourseenrolments as $key => $enrolinstance) {
                 $enrolldate[] = user_data_handler::get_user_date_time($enrolinstance->timecreated);
                 $enrollmethod[] = enrol_get_plugin($enrolinstance->enrol)->get_instance_name($enrolinstance);
                 $status[] = $statusvalues[$enrolinstance->ue_status ? 1 : ($enrolinstance->enrol_status ? 2 : 0)];
@@ -585,21 +619,38 @@ class tablereport {
                     ) .
                         html_writer::tag(
                             'div',
-                            html_writer::tag('span', $record->firstname . ' ' . $record->lastname, ['user-field' => 'fullname', 'title' => "fullname"]) .
-                                html_writer::tag('span', '(' . $record->email . ')', ['user-field' => 'email', 'title' => 'email', 'class' => 'break-anywhere']),
+                            html_writer::tag(
+                                'span',
+                                $record->firstname . ' ' . $record->lastname,
+                                ['user-field' => 'fullname', 'title' => "fullname"]
+                            ) .
+                                html_writer::tag(
+                                    'span',
+                                    '(' . $record->email . ')',
+                                    ['user-field' => 'email', 'title' => 'email', 'class' => 'break-anywhere']
+                                ),
                             ['class' => 'pl-3 d-flex flex-column justify-content-start']
                         ),
                     ['class' => 'd-flex justify-content-start ']
                 );
-                $row[] = html_writer::alist(array_column($courseroles, 'name'), ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
-                $row[] = html_writer::alist(array_column($groups, 'name'), ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
+                $row[] = html_writer::alist(
+                    array_column($courseroles, 'name'),
+                    ['style' => 'list-style: none; padding-left: 0; margin: 0;']
+                );
+                $row[] = html_writer::alist(
+                    array_column($groups, 'name'),
+                    ['style' => 'list-style: none; padding-left: 0; margin: 0;']
+                );
                 $row[] = user_data_handler::get_user_course_progress($course, $record->id) . '%';
                 $row[] = html_writer::alist($enrolldate, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
                 $row[] = html_writer::alist($enrollmethod, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
-                $row[] =  html_writer::tag(
+                $row[] = html_writer::tag(
                     'div',
                     html_writer::tag('span', user_data_handler::get_user_date_time($record->lastcourseaccess, '')) .
-                        ($record->lastcourseaccess ?  html_writer::tag('span', "(" . format_time(time() - $record->lastcourseaccess) . ")") : ''),
+                        ($record->lastcourseaccess ? html_writer::tag(
+                            'span',
+                            "(" . format_time(time() - $record->lastcourseaccess) . ")"
+                        ) : ''),
                     ['class' => 'd-flex flex-column justify-content-start']
                 );
                 $row[] = html_writer::alist($status, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
@@ -646,8 +697,18 @@ class tablereport {
         }
 
         $reportrecords = user_data_handler::user_get_enrolled_courses($parameters);
-        // Table information setup
-        $tablecolumns = ['sn', 'coursename', 'courserole', 'groups', 'courseprogress', 'enrolldate', 'enrolmentmethods', 'lastcourseaccess', 'status'];
+        // Table information setup.
+        $tablecolumns = [
+            'sn',
+            'coursename',
+            'courserole',
+            'groups',
+            'courseprogress',
+            'enrolldate',
+            'enrolmentmethods',
+            'lastcourseaccess',
+            'status',
+        ];
         $tableheaders = [
             get_string('sn', 'report_usercoursereports'),
             get_string('coursename', 'report_usercoursereports'),
@@ -658,17 +719,15 @@ class tablereport {
             get_string('enrolmentmethods', 'report_usercoursereports'),
             get_string('lastcourseaccess'),
             get_string('status'),
-
-
         ];
-        $col_sorting = [''];
+        $colsorting = [''];
         $tablename = 'user-enrolled-courses';
         $tableattributes = [
             'id' => $tablename,
             'class' => 'generaltable generalbox',
         ];
         $totalrecord = count($reportrecords);
-        // Initialize table
+        // Initialize table.
         $table = new usercoursereport_flextablelib($tablename);
         $table->define_columns($tablecolumns);
         $table->define_headers($tableheaders);
@@ -678,7 +737,7 @@ class tablereport {
         $table->pagesize($totalrecord, $totalrecord);
         $table->sortable(true);
         foreach ($tablecolumns as $col) {
-            if (!in_array($col, $col_sorting)) {
+            if (!in_array($col, $colsorting)) {
                 $table->no_sorting($col);
             }
         }
@@ -698,17 +757,17 @@ class tablereport {
                 TABLE_VAR_PAGE   => 'spage',
             ]
         );
-        // Reset handling
+        // Reset handling.
         if (isset($parameters['treset']) && $parameters['treset'] == 1) {
             $table->mark_table_to_reset();
         }
-        // Download handling
+        // Download handling.
         $table->show_download_buttons_at([TABLE_P_BOTTOM]);
         if ($table->is_downloading($download, $tablename . "-" . $userid, $tablename . "-" . $userid)) {
             raise_memory_limit(MEMORY_EXTRA);
         }
 
-        // Setup table
+        // Setup table.
         $table->setup();
         ob_start();
         $datafrom = 1;
@@ -719,8 +778,8 @@ class tablereport {
             $coursecontext = \context_course::instance($record->id);
             $coursecategories = $DB->get_record('course_categories', ['id' => $record->category]);
             $statusvalues = enrolment::enrolment_values();
-            $user_course_enrolments = user_data_handler::get_user_course_enrolments($userid, $record->id);
-            foreach ($user_course_enrolments as $key => $enrolinstance) {
+            $usercourseenrolments = user_data_handler::get_user_course_enrolments($userid, $record->id);
+            foreach ($usercourseenrolments as $key => $enrolinstance) {
                 $enrolldate[] = user_data_handler::get_user_date_time($enrolinstance->timecreated);
                 $enrollmethod[] = enrol_get_plugin($enrolinstance->enrol)->get_instance_name($enrolinstance);
                 $status[] = $statusvalues[$enrolinstance->ue_status ? 1 : ($enrolinstance->enrol_status ? 2 : 0)];
@@ -732,7 +791,7 @@ class tablereport {
             $groups = groups_get_all_groups($record->id, $userid);
             $record->lastcourseaccess = $DB->get_field('user_lastaccess', 'timeaccess', [
                 'courseid' => $record->id,
-                'userid' => $userid
+                'userid' => $userid,
             ]);
 
             // ... output item row
@@ -764,15 +823,24 @@ class tablereport {
                         ),
                     ['class' => 'course-link d-flex justify-content-start']
                 );
-                $row[] = html_writer::alist(array_column($courseroles, 'name'), ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
-                $row[] = html_writer::alist(array_column($groups, 'name'), ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
+                $row[] = html_writer::alist(
+                    array_column($courseroles, 'name'),
+                    ['style' => 'list-style: none; padding-left: 0; margin: 0;']
+                );
+                $row[] = html_writer::alist(
+                    array_column($groups, 'name'),
+                    ['style' => 'list-style: none; padding-left: 0; margin: 0;']
+                );
                 $row[] = user_data_handler::get_user_course_progress($record, $userid) . '%';
                 $row[] = html_writer::alist($enrolldate, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
                 $row[] = html_writer::alist($enrollmethod, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
-                $row[] =  html_writer::tag(
+                $row[] = html_writer::tag(
                     'div',
                     html_writer::tag('span', user_data_handler::get_user_date_time($record->lastcourseaccess, '')) .
-                        ($record->lastcourseaccess ?  html_writer::tag('span', "(" . format_time(time() - $record->lastcourseaccess) . ")") : ''),
+                        ($record->lastcourseaccess ? html_writer::tag(
+                            'span',
+                            "(" . format_time(time() - $record->lastcourseaccess) . ")"
+                        ) : ''),
                     ['class' => 'd-flex flex-column justify-content-start']
                 );
                 $row[] = html_writer::alist($status, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
