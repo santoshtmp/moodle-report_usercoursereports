@@ -84,7 +84,7 @@ class get_report_table extends external_api {
             // ... get query string into variables.
             parse_str($param['querystring'], $data);
 
-            // ... set as get param 
+            // ... set as get param
             foreach ($data as $key => $value) {
                 $_GET[$key] = $value;
             }

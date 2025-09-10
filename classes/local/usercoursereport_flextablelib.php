@@ -28,6 +28,8 @@ namespace report_usercoursereports\local;
 use html_writer;
 use moodle_url;
 
+defined('MOODLE_INTERNAL') || die();
+
 require_once($CFG->libdir . '/tablelib.php');
 
 /**
@@ -42,12 +44,17 @@ require_once($CFG->libdir . '/tablelib.php');
 class usercoursereport_flextablelib extends \flexible_table {
 
     /** @var moodle_url the base url for the table */
-    var $reseturl = NULL;
+    protected $reseturl = null;
 
     /**
-     * This function is not part of the public api.
+     * Prints a message when there is no data to display in the table.
+     *
+     * This method outputs the table header, a reset button, the initials bar,
+     * a message indicating no data is available, and the table footer.
+     *
+     * @return void
      */
-    function print_nothing_to_display() {
+    public function print_nothing_to_display() {
 
         // Render the dynamic table header.
         echo $this->get_dynamic_table_html_start();
@@ -67,6 +74,7 @@ class usercoursereport_flextablelib extends \flexible_table {
      * Define the URL to use for the table preferences reset button.
      *
      * @param string|moodle_url $url the url to use
+     * @return void
      */
     public function define_reseturl($url) {
         $this->reseturl = new moodle_url($url);
@@ -76,6 +84,7 @@ class usercoursereport_flextablelib extends \flexible_table {
      * Generate the HTML for the table preferences reset button.
      *
      * @return string HTML fragment, empty string if no need to reset
+     * @return string HTML fragment, or empty string if no reset is possible or needed.
      */
     protected function render_reset_button($showreset = false) {
 
@@ -86,9 +95,9 @@ class usercoursereport_flextablelib extends \flexible_table {
         }
 
         if ($this->reseturl) {
-            $url = $this->reseturl->out(false, array($this->request[TABLE_VAR_RESET] => 1));
+            $url = $this->reseturl->out(false, [$this->request[TABLE_VAR_RESET] => 1]);
         } else {
-            $url = $this->baseurl->out(false, array($this->request[TABLE_VAR_RESET] => 1));
+            $url = $this->baseurl->out(false, [$this->request[TABLE_VAR_RESET] => 1]);
         }
 
         $html  = html_writer::start_div('resettable mdl-right');
@@ -102,6 +111,7 @@ class usercoursereport_flextablelib extends \flexible_table {
      * Get the html for the download buttons
      *
      * Usually only use internally
+     * @return string HTML fragment with download options, or empty string if not applicable.
      */
     public function download_buttons() {
         global $OUTPUT;

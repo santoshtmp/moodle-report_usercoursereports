@@ -380,7 +380,7 @@ class course_data_handler {
         $enrolinstances = enrol_get_instances((int)$courseid, false);
         foreach ($enrolinstances as $key => $courseenrolinstance) {
             $enrolplugin = enrol_get_plugin($courseenrolinstance->enrol);
-            $isdisable = ($courseenrolinstance->status) ?  " " . get_string('disable') : " ";
+            $isdisable = ($courseenrolinstance->status) ? " " . get_string('disable') : " ";
             if ($returnonlyname) {
                 $enrollmentmethods[$courseenrolinstance->id] = $enrolplugin->get_instance_name($courseenrolinstance) . $isdisable;
             } else {
@@ -403,7 +403,7 @@ class course_data_handler {
      * @return array Group mode choices.
      */
     public static function get_groupmode_name() {
-        $choices = array();
+        $choices = [];
         $choices[NOGROUPS] = get_string('groupsnone', 'group');
         $choices[SEPARATEGROUPS] = get_string('groupsseparate', 'group');
         $choices[VISIBLEGROUPS] = get_string('groupsvisible', 'group');
@@ -437,7 +437,7 @@ class course_data_handler {
                 $numsections = get_config('moodlecourse ')->numsections;
             }
 
-            // Collect groups
+            // Collect groups.
             $groups = groups_get_all_groups($course->id);
             $groupsinfo = [];
             if (!empty($groups)) {
@@ -448,12 +448,12 @@ class course_data_handler {
                         'description' => format_text($group->description, $group->descriptionformat),
                         'idnumber'    => $group->idnumber,
                         'enrolmentkey' => $group->enrolmentkey,
-                        'picture'     => $group->picture
+                        'picture'     => $group->picture,
                     ];
                 }
             }
 
-            // Single query: count enrolled users who have accessed the course at least once
+            // Single query: count enrolled users who have accessed the course at least once.
             $countcourseaccessusers = $DB->count_records_sql(
                 "
                     SELECT COUNT(1)

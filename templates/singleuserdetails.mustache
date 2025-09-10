@@ -17,17 +17,55 @@
 {{!
     @template report_usercoursereports/singleuserdetails
     
+    {{!
+    @template report_usercoursereports/singleuserdetails
+
     Example context (json):
     {
         "userinfo": {
+            "id": 2,
             "username": "janedoe",
             "firstname": "Jane",
             "lastname": "Doe",
             "profile_link": "http://example.com/user/profile.php?id=2",
             "profileimage_link": "http://example.com/theme/image.php/boost/core/1600000000/u/f2",
-            "description": "This is a test description for Jane Doe."
-        }
+            "description": "This is a test description for Jane Doe.",
+            "auth": "manual",
+            "suspended": false,
+            "confirmed": true,
+            "phone1": "1234567890",
+            "phone2": "0987654321",
+            "city": "Sydney",
+            "country": "AU",
+            "country_name": "Australia",
+            "address": "123 Main St",
+            "timezone": "Australia/Sydney",
+            "institution": "Example University",
+            "department": "IT Department",
+            "interests": "Reading, Coding",
+            "language": "en",
+            "usercoursecount": 5,
+            "timecreated": "Jan 1, 2020",
+            "timemodified": "Sep 1, 2025",
+            "firstaccess": "Jan 2, 2020",
+            "lastaccess": "Sep 10, 2025",
+            "lastlogin": "Sep 9, 2025",
+            "customofields": [
+                {
+                    "categoryname": "Custom profile fields",
+                    "name": "Hobby",
+                    "displayvalue": "Cycling"
+                },
+                {
+                    "categoryname": "Custom profile fields",
+                    "name": "Favorite Color",
+                    "displayvalue": "Blue"
+                }
+            ]
+        },
+        "allroles": "Teacher, Admin"
     }
+
 
 }}
 

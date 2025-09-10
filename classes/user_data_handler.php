@@ -90,7 +90,9 @@ class user_data_handler {
      */
     public static function get_user_course_enrolments($enrolleduserid, $courseid) {
         global $DB;
-        $query = 'SELECT ue.id, ue.status as ue_status, ue.timecreated, enrol.courseid, enrol.name, enrol.enrol, enrol.status as enrol_status 
+        $query = 'SELECT ue.id, ue.status as ue_status,
+                        ue.timecreated, enrol.courseid, enrol.name, enrol.enrol,
+                        enrol.status as enrol_status
             FROM {user_enrolments} ue
             LEFT JOIN {enrol} enrol ON ue.enrolid = enrol.id
             WHERE enrol.courseid = :courseid AND ue.userid = :userid
@@ -278,8 +280,6 @@ class user_data_handler {
                 $preferences[] = ['name' => $prefname, 'value' => $prefvalue];
             }
 
-            // auth plugin 
-
             // ... data arrange to return
             $userinfo['id'] = $user->id;
             $userinfo['username'] = $user->username;
@@ -324,7 +324,6 @@ class user_data_handler {
                 ",
                 ['userid' => $userid]
             );
-
 
             return $userinfo;
         }
@@ -674,9 +673,7 @@ class user_data_handler {
 
             $sqlparams['ecourseid'] = $courseid;
             $sqlparams['enrolinstanceid'] = $enrolinstanceid;
-            // $sqlparams['enrolstatus'] = ENROL_INSTANCE_ENABLED;
             $wherecondition[] = 'e.id = :enrolinstanceid';
-            // $wherecondition[] = 'e.status = :enrolstatus';
         }
 
         // ... apply table join
@@ -696,7 +693,7 @@ class user_data_handler {
         $onlyactive = '';
         $userfields = 'u.*, ra.roleid as roleid, ula.timeaccess as lastcourseaccess';
 
-        // This builds SQL for enrolled users (subquery)
+        // This builds SQL for enrolled users (subquery).
         list($esql, $params) = get_enrolled_sql($context, $withcapability, $groupid, $onlyactive);
 
         $sql = "SELECT $userfields
@@ -708,17 +705,12 @@ class user_data_handler {
             $orderby;
         $params = array_merge($sqlparams, $params);
 
-        // echo "<pre>";
-        // print_r($sql);
-        // print_r($params);
-        // echo "</pre>";
-        // die;
         // ... execute query
         $data = $DB->get_records_sql($sql, $params, $limitfrom, $limitnum);
 
         // ... count total records
-        $sqlquery = "SELECT COUNT(DISTINCT u.id) 
-            FROM {user} u 
+        $sqlquery = "SELECT COUNT(DISTINCT u.id)
+            FROM {user} u
             JOIN ($esql) je ON je.id = u.id " .
             $joinapply . " " .
             $whereapply;
