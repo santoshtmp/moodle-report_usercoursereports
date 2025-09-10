@@ -82,36 +82,93 @@ define(['jquery', 'core/ajax', 'core/str'], function ($, Ajax, str) {
     }
 
     /**
-     * Check and handle course summary read more/less button toggle
+     * usercoursereports btn toggle
      */
-    function checkHandleCourseSummaryToggle() {
-        const readmorePromise = str.get_string('readmore', 'report_usercoursereports');
-        const showlessPromise = str.get_string('showless', 'report_usercoursereports');
+    function usercoursereportsToggleBtn() {
 
-        Promise.all([readmorePromise, showlessPromise]).then(([readmoreText, showlessText]) => {
-            document.querySelectorAll(".singlecoursedetails").forEach(card => {
-                const summary = card.querySelector(".course-summary");
-                const btn = card.querySelector(".readmore-btn");
+        // Toggle course detail content
+        $(document).on('click', '.usercoursereports [aria-controls="reportgeneraldetailcontent"]', function () {
+            const $icon = $(this).find('.fa');
+            if ($(this).attr('aria-expanded') === 'true') {
+                $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $(this).attr('aria-expanded', false);
+            } else {
+                $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                $(this).attr('aria-expanded', true);
+            }
+            $('#reportgeneraldetailcontent').toggle('show');
+        });
 
-                if (!summary || !btn) {
-                    return;
-                }
+        // Read more / show less for summary
+        if (document.querySelector('.usercoursereports .readmore-btn')) {
+            const readmorePromise = str.get_string('readmore', 'report_usercoursereports');
+            const showlessPromise = str.get_string('showless', 'report_usercoursereports');
+            Promise.all([readmorePromise, showlessPromise]).then(([readmoreText, showlessText]) => {
+                document.querySelectorAll(".usercoursereports").forEach(card => {
+                    const summary = card.querySelector(".course-summary");
+                    const btn = card.querySelector(".readmore-btn");
 
-                if (summary.scrollHeight > summary.clientHeight) {
-                    btn.classList.remove("d-none");
-                }
+                    if (!summary || !btn) {
+                        return;
+                    }
 
-                btn.addEventListener("click", () => {
-                    summary.classList.toggle("collapsed-summary");
-                    btn.textContent = summary.classList.contains("collapsed-summary")
-                        ? readmoreText
-                        : showlessText;
+                    if (summary.scrollHeight > summary.clientHeight) {
+                        btn.classList.remove("d-none");
+                    }
+
+                    btn.addEventListener("click", () => {
+                        summary.classList.toggle("collapsed-summary");
+                        btn.textContent = summary.classList.contains("collapsed-summary")
+                            ? readmoreText
+                            : showlessText;
+                    });
                 });
             });
+        }
+    }
+
+    /**
+     *
+     * @param {*} filterFormId
+     */
+    function formReset(filterFormId) {
+        const form = $("#" + filterFormId);
+        if (!form.length) { return; }
+
+        // Reset the native form
+        form[0].reset();
+
+        // Clear autocomplete selections
+        form.find(".form-autocomplete-selection").html('');
+
+        // Reset all fields inside wrappers
+        form.find(".usercoursereports-filter-field").each(function () {
+            var $wrapper = $(this);
+
+            $wrapper.find('input, select, textarea').each(function () {
+                var $el = $(this);
+                var type = $el.attr('type');
+
+                if ($el.is('select')) {
+                    if ($el.find('option[value="0"]').length) {
+                        $el.val('0');
+                    } else if ($el.find('option[value="all"]').length) {
+                        $el.val('all');
+                    }
+                } else if (type === 'checkbox' || type === 'radio') {
+                    $el.prop('checked', false);
+                } else if (type === 'number') {
+                    $el.val($el.attr('default-value') || 50);
+                } else {
+                    $el.val('');
+                }
+            });
+
+            // Trigger change if any UI plugin relies on it
+            $wrapper.find('input, select, textarea').trigger('change');
         });
 
     }
-
 
     return {
         init: function (pagedata) {
@@ -126,7 +183,13 @@ define(['jquery', 'core/ajax', 'core/str'], function ($, Ajax, str) {
             }
 
             // Handle course summary read more/less button toggle
-            checkHandleCourseSummaryToggle();
+            usercoursereportsToggleBtn();
+
+            // Remove name from autocomplete hidden field
+            $('input[value="_qf__force_multiselect_submission"]').each(function () {
+                $(this).val('');
+                $(this).attr('name', '');
+            });
 
             // Filter on form submit
             $('#' + filterFormId).on('submit', function (e) {
@@ -162,16 +225,21 @@ define(['jquery', 'core/ajax', 'core/str'], function ($, Ajax, str) {
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
                     getFilterReportTable(formquerystring);
-                    $("#" + filterFormId)[0].reset();
+                    formReset(filterFormId);
                 }
             });
 
             // Filter the table clear btn click
             $(document).on('click', '#' + filterFormId + ' #clearfilter', function (e) {
-                const formquerystring = (pagedata.pagereseturl).split('?')[1];
+                // const formquerystring = (pagedata.pagereseturl).split('?')[1];
+                let formquerystring = '';
+                if (pagedata.pagereseturl) {
+                    let url = new URL(pagedata.pagereseturl, window.location.origin);
+                    formquerystring = url.searchParams.toString();
+                }
                 if (formquerystring) {
                     getFilterReportTable(formquerystring);
-                    $("#" + filterFormId)[0].reset();
+                    formReset(filterFormId);
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
@@ -188,6 +256,21 @@ define(['jquery', 'core/ajax', 'core/str'], function ($, Ajax, str) {
                     form.submit();
                 }
             });
+
+            // On load user single detail load the course
+            if (
+                $('.singleuserdetail.my-enrolled-courses #report-usercoursereports-filter-area').length ||
+                $('.singlecoursedetails.courseparticipation #report-usercoursereports-filter-area').length
+            ) {
+                let formquerystring = '';
+                if (pagedata.pagereseturl) {
+                    let url = new URL(pagedata.pagereseturl, window.location.origin);
+                    formquerystring = url.searchParams.toString();
+                }
+                if (formquerystring) {
+                    getFilterReportTable(formquerystring);
+                }
+            }
 
         }
     };

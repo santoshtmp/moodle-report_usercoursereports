@@ -143,7 +143,7 @@ class get_report_table extends external_api {
                 // ... Get the report table.
                 $filterdata['pageurl'] = $pageurl->out(false);
                 if ($type == 'user' && $parameters['id']) {
-                    $filterdata['reporttable'] = ''; //tablereport::course_enrolled_users($parameters);
+                    $filterdata['reporttable'] = tablereport::user_enrolled_courses($parameters);
                 } else if ($type == 'course' && $parameters['id']) {
                     $filterdata['reporttable'] = tablereport::course_enrolled_users($parameters);
                 } else if ($type == 'course') {

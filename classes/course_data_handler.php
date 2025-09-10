@@ -377,15 +377,16 @@ class course_data_handler {
     public static function get_course_enrollmentmethods($courseid, $returnonlyname = false) {
         global $DB;
         $enrollmentmethods = [];
-        $enrolinstances = enrol_get_instances((int)$courseid, true);
+        $enrolinstances = enrol_get_instances((int)$courseid, false);
         foreach ($enrolinstances as $key => $courseenrolinstance) {
             $enrolplugin = enrol_get_plugin($courseenrolinstance->enrol);
+            $isdisable = ($courseenrolinstance->status) ?  " " . get_string('disable') : " ";
             if ($returnonlyname) {
-                $enrollmentmethods[] = $enrolplugin->get_instance_name($courseenrolinstance);
+                $enrollmentmethods[$courseenrolinstance->id] = $enrolplugin->get_instance_name($courseenrolinstance) . $isdisable;
             } else {
                 $instance = [
                     'enrol' => $courseenrolinstance->enrol,
-                    'name' => $enrolplugin->get_instance_name($courseenrolinstance),
+                    'name' => $enrolplugin->get_instance_name($courseenrolinstance) . $isdisable,
                     'cost' => $courseenrolinstance->cost,
                     'currency' => $courseenrolinstance->currency,
                     'roleid' => $courseenrolinstance->roleid,
@@ -452,6 +453,17 @@ class course_data_handler {
                 }
             }
 
+            // Single query: count enrolled users who have accessed the course at least once
+            $countcourseaccessusers = $DB->count_records_sql(
+                "
+                    SELECT COUNT(1)
+                    FROM {user_lastaccess} ula
+                    JOIN {user_enrolments} ue ON ue.userid = ula.userid
+                    JOIN {enrol} e ON e.id = ue.enrolid AND e.courseid = ?
+                    WHERE ula.courseid = ? AND ula.timeaccess > 0
+                ",
+                [$courseid, $courseid]
+            );
             // ... data arrange to return
             $courseinfo['id'] = $course->id;
             $courseinfo['categoryid'] = $course->category;
@@ -483,6 +495,7 @@ class course_data_handler {
                 $course->timemodified : user_data_handler::get_user_date_time($course->timemodified);
             $courseinfo['enrollment_methods'] = self::get_course_enrollmentmethods($course->id);
             $courseinfo['count_enrolled_users'] = count_enrolled_users($context);
+            $courseinfo['count_access_users'] = $countcourseaccessusers;
             $courseinfo['total_sections'] = $numsections;
             $courseinfo['course_newsitems'] = $course->newsitems;
             $courseinfo['count_activities'] = count(course_modinfo::get_array_of_activities($course, true));

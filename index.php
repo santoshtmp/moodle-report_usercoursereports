@@ -107,7 +107,7 @@ if ($filterform->is_cancelled()) {
 $contents = '';
 $contents .= usercoursereports::get_report_list($parameters);
 if ($type == 'user' && $parameters['id']) {
-    $contents .= usercoursereports::get_singleuser_info($parameters['id']);
+    $contents .= usercoursereports::get_singleuser_info($parameters);
 } else if ($type == 'course' && $parameters['id']) {
     $contents .= usercoursereports::get_singlecourse_info($parameters);
 } else if ($type == 'course') {

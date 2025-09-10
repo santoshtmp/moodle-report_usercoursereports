@@ -24,6 +24,12 @@
     max-width: 400px;
 }
 
+#page-report_usercoursereports .break-anywhere {
+    line-break: anywhere;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
 /* ----  report-usercoursereports-filter  section ---- */
 
 #page-report_usercoursereports .report-usercoursereports-filter .filter-grid {
@@ -103,7 +109,7 @@
 
 /* ---- singlecoursedetails section ---- */
 #page-report_usercoursereports .singlecoursedetails .collapsed-summary {
-    max-height: 150px;
+    max-height: 100px;
     overflow: hidden;
     position: relative;
     transition: max-height 0.5s ease;
@@ -119,28 +125,28 @@
     background: linear-gradient(to top, white, transparent);
 }
 
-#page-report_usercoursereports .singlecoursedetails .coursedetail-grid {
+#page-report_usercoursereports .list-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
 }
 
-#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item {
+#page-report_usercoursereports .list-grid .list-group-item {
     border: 1px solid #dee2e6;
     border-left: none;
     border-top: none;
 }
 
-#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:nth-child(odd) {
+#page-report_usercoursereports .list-grid .list-group-item:nth-child(odd) {
     border-left: 1px solid #dee2e6;
 }
 
-#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:first-child,
-#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:nth-child(2) {
+#page-report_usercoursereports .list-grid .list-group-item:first-child,
+#page-report_usercoursereports .list-grid .list-group-item:nth-child(2) {
     border-top: 1px solid #dee2e6;
 }
 
-#page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item strong {
+#page-report_usercoursereports .list-grid .list-group-item strong {
     display: inline-block;
     margin-right: .3rem;
     font-weight: 600;
@@ -148,15 +154,15 @@
 
 
 @media (max-width: 767.98px) {
-    #page-report_usercoursereports .singlecoursedetails .coursedetail-grid {
+    #page-report_usercoursereports .list-grid {
         grid-template-columns: 1fr;
     }
 
-    #page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item {
+    #page-report_usercoursereports .list-grid .list-group-item {
         border-left: 1px solid #dee2e6;
     }
 
-    #page-report_usercoursereports .singlecoursedetails .coursedetail-grid .list-group-item:nth-child(odd) {
+    #page-report_usercoursereports .list-grid .list-group-item:nth-child(odd) {
         border-left: 1px solid #dee2e6;
     }
 }

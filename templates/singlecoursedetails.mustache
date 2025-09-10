@@ -19,12 +19,20 @@
 
 }}
 
-<div class="card shadow-lg rounded-3 singlecoursedetails mt-4" courseid="{{courseinfo.id}}">
+<div class="card shadow-lg rounded-3 singlecoursedetails usercoursereports mt-4" courseid="{{courseinfo.id}}">
     <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
         <h2 class="mb-0">{{courseinfo.fullname}} </h2>
+        <div class="btn btn-sm btn-light d-flex align-items-center justify-content-center p-2"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#reportgeneraldetailcontent"
+            aria-expanded="true"
+            aria-controls="reportgeneraldetailcontent">
+            <i class="icon fa fa-chevron-down m-0"></i>
+        </div>
     </div>
 
-    <div class="card-body">
+    <div id="reportgeneraldetailcontent" class="card-body collapse show" >
         <div class="row g-4">
 
             <div class="col-md-4">
@@ -74,7 +82,7 @@
 
             <div class="col-md-8">
                 <h4><i class="fa fa-book text-primary"></i><span class="ml-2">{{#str}} coursedetails {{/str}}</span></h4>
-                <ul class="list-group list-group-flush coursedetail-grid">
+                <ul class="list-group list-group-flush list-grid">
                     <li class="list-group-item">
                         <strong>{{#str}} fullnamecourse {{/str}}:</strong> 
                         <span><a href="{{courseinfo.course_link}}"><span>{{courseinfo.fullname}}</span></a></span>
@@ -148,8 +156,8 @@
                         <span>{{courseinfo.count_enrolled_users}}</span>
                     </li>
                     <li class="list-group-item">
-                        <strong>{{#str}} totalactiveparticipants,report_usercoursereports {{/str}}:</strong>
-                        <span>{{courseinfo.count_enrolled_users}}</span>
+                        <strong>{{#str}} totalaccessparticipants,report_usercoursereports {{/str}}:</strong>
+                        <span>{{courseinfo.count_access_users}}</span>
                     </li>
                     <li class="list-group-item">
                         <strong>{{#str}} totalcoursesections,report_usercoursereports {{/str}}:</strong>
@@ -168,7 +176,7 @@
         <div class="mt-4">
             <h4><i class="fa fa-info-circle me-2 text-primary"></i><span class="ml-2">{{#str}} coursesummary {{/str}}</span></h4>
         
-                <div class="course-summary mt-3 text-muted collapsed-summary">
+            <div class="course-summary mt-3 mb-3 text-muted collapsed-summary">
                 <p>{{{courseinfo.summary}}}</p>
             </div>
             
@@ -176,16 +184,20 @@
                 {{#str}} readmore,report_usercoursereports {{/str}}
             </button>
         </div>
-
-       
     </div>
 </div>
 
-
-<div class="card shadow-lg rounded-3 singlecourseparticipation mt-4">
+<div class="card shadow-lg rounded-3 singlecoursedetails courseparticipation mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="mb-0">{{#str}} course {{/str}} {{#str}} participants {{/str}} </h2>
+    </div>
     <div class="card-body">
         {{{filtercourseusers}}}
-        {{{enrolleduserTable}}}
+        <div id="report-usercoursereports-filter-area">
+            <div id="filter-loading-wrapper" class="d-flex justify-content-center">
+                {{>core/loading}}
+            </div>
+        </div>
     </div>
 </div>
 
