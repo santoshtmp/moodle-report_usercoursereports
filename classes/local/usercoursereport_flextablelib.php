@@ -98,4 +98,32 @@ class usercoursereport_flextablelib extends \flexible_table {
         return $html;
     }
 
+    /**
+     * Get the html for the download buttons
+     *
+     * Usually only use internally
+     */
+    public function download_buttons() {
+        global $OUTPUT;
+        $params = [];
+        foreach ($this->baseurl->params() as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $k => $val) {
+                    $params[$key . "[" . $k . "]"] = $val;
+                }
+            } else {
+                $params[$key] = $value;
+            }
+        }
+        if ($this->is_downloadable() && !$this->is_downloading()) {
+            return $OUTPUT->download_dataformat_selector(
+                get_string('downloadas', 'table'),
+                $this->baseurl->out_omit_querystring(),
+                'download',
+                $params,
+            );
+        } else {
+            return '';
+        }
+    }
 }

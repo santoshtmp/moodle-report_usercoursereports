@@ -42,31 +42,6 @@ use moodle_url;
 class user_data_handler {
 
     /**
-     * Returns the list of courses where the user is enrolled.
-     *
-     * @param stdClass $user User object.
-     * @return array List of enrolled courses with progress and roles.
-     */
-    public static function user_enrolled_courses($user) {
-        $mycourses = enrol_get_users_courses($user->id, false, '*', 'visible DESC, fullname ASC, sortorder ASC');
-        foreach ($mycourses as &$mycourse) {
-            $coursecontext = \context_course::instance($mycourse->id);
-            $enrolments = self::get_user_course_enrolments($user->id, $mycourse->id);
-            $courseroles = get_user_roles($coursecontext, $user->id);
-            foreach ($courseroles as $key => &$role) {
-                $role->name = $role->name ?: role_get_name($role);
-            }
-            // ... add more info
-            $mycourse->percentage = self::get_user_course_progress($mycourse, $user->id);
-            $mycourse->course_link = (new \moodle_url('/course/view.php', ['id' => $mycourse->id]))->out();
-            $mycourse->enrolments_timecreated = self::get_user_date_time($enrolments->timecreated);
-            $mycourse->enrolinstances = enrol_get_instances((int)$mycourse->id, true);
-            $mycourse->mycourseroles = $courseroles;
-        }
-        return $mycourses;
-    }
-
-    /**
      * Returns a human-readable date/time string.
      *
      * @param int $timestamp Unix timestamp.
@@ -115,7 +90,7 @@ class user_data_handler {
      */
     public static function get_user_course_enrolments($enrolleduserid, $courseid) {
         global $DB;
-        $query = 'SELECT ue.id, ue.status, ue.timecreated, enrol.courseid, enrol.name, enrol.enrol 
+        $query = 'SELECT ue.id, ue.status as ue_status, ue.timecreated, enrol.courseid, enrol.name, enrol.enrol, enrol.status as enrol_status 
             FROM {user_enrolments} ue
             LEFT JOIN {enrol} enrol ON ue.enrolid = enrol.id
             WHERE enrol.courseid = :courseid AND ue.userid = :userid
@@ -131,11 +106,14 @@ class user_data_handler {
     /**
      * Returns user profile image URL.
      *
-     * @param stdClass $user User object.
+     * @param stdClass|id $user User object or id.
      * @return string URL of user profile image.
      */
     public static function get_user_profile_image($user, $imageurl = true) {
-        global $PAGE, $OUTPUT;
+        global $PAGE, $OUTPUT, $DB;
+        if (!is_object($user)) {
+            $user = $DB->get_record('user', ['id' => $user]);
+        }
         if ($imageurl) {
             $userpicture = new \user_picture($user);
             $userpicture->size = 1;
@@ -300,13 +278,15 @@ class user_data_handler {
                 $preferences[] = ['name' => $prefname, 'value' => $prefvalue];
             }
 
+            // auth plugin 
+
             // ... data arrange to return
             $userinfo['id'] = $user->id;
             $userinfo['username'] = $user->username;
             $userinfo['email'] = $user->email;
             $userinfo['firstname'] = $user->firstname;
             $userinfo['lastname'] = $user->lastname;
-            $userinfo['auth'] = $user->auth;
+            $userinfo['auth'] = get_string('pluginname', "auth_{$user->auth}");
             $userinfo['suspended'] = $user->suspended;
             $userinfo['confirmed'] = $user->confirmed;
             $userinfo['policyagreed'] = $user->policyagreed;
@@ -319,6 +299,7 @@ class user_data_handler {
             $userinfo['country'] = $user->country;
             $userinfo['country_name'] = ($user->country) ? get_string_manager()->get_list_of_countries()[$user->country] : '';
             $userinfo['lang'] = $user->lang;
+            $userinfo['language'] = get_string_manager()->get_list_of_translations()[$user->lang];
             $userinfo['profileimage_link'] = self::get_user_profile_image($user);
             $userinfo['description'] = self::get_user_description($user);
             $userinfo['timezone'] = ($user->timezone == '99') ? $defaulttimezone : $user->timezone;
@@ -332,8 +313,18 @@ class user_data_handler {
             $userinfo['preferences'] = $preferences;
             $userinfo['interests'] = $intereststags;
             $userinfo['customofields'] = self::get_user_customofields($user);
-            $userinfo['enrolled_courses'] = self::user_enrolled_courses($user);
             $userinfo['roles'] = self::get_all_roles($user->id);
+
+            $userinfo['usercoursecount'] = $DB->count_records_sql(
+                "
+                    SELECT COUNT(DISTINCT e.courseid)
+                    FROM {user_enrolments} ue
+                    JOIN {enrol} e ON e.id = ue.enrolid
+                    WHERE ue.userid = :userid
+                ",
+                ['userid' => $userid]
+            );
+
 
             return $userinfo;
         }
@@ -551,28 +542,47 @@ class user_data_handler {
     }
 
     /**
-     * 
+     * Retrieves a paginated list of users enrolled in a specific course.
+     *
+     * Supports filtering by search keyword, role, enrolment method, group, and sorting options.
+     * Returns user data and metadata for pagination and display.
+     *
+     * @param array $parameters {
+     *     int    $spage         Page number (default 0).
+     *     int    $perpage       Records per page (default 0).
+     *     int    $id            Course ID.
+     *     string $search        Search keyword (optional).
+     *     array  $roleids       Filter by role IDs (optional).
+     *     string $enrolmethod   Enrolment instance ID (optional).
+     *     string $groupid       Group ID (optional).
+     *     string $sortby        Sort field (default 'timemodified').
+     *     int    $sortdir       Sort direction (default SORT_DESC).
+     *     int    $download      If set, disables pagination (default 0).
+     * }
+     * @return array {
+     *     'data' => array List of enrolled user records,
+     *     'meta' => array Pagination and summary metadata
+     * }
      */
-    public static function get_course_enrolled_users($parameters) {
+    public static function course_get_enrolled_users($parameters) {
         global $CFG, $DB;
         // ... get parameter
-        $pagenumber     = $parameters['spage'] ?? 0;
-        $perpage        = $parameters['perpage'] ?? 0;
-        $courseid       = $parameters['id'] ?? 0;
-        $searchuser     = $parameters['search'] ?? '';
-        $suspended      = $parameters['suspended'] ?? '';
-        $roleids        = $parameters['roleids'] ?? [];
-        $enrolmethod    = $parameters['enrolmethod'] ?? '';
-        $sortby         = $parameters['sortby'] ?? 'timemodified';
-        $sortdir        = $parameters['sortdir'] ?? SORT_DESC;
-        $download       = $parameters['download'] ?? 0;
-
-        // var_dump($roleids);
-        // die;
+        $pagenumber         = $parameters['spage'] ?? 0;
+        $perpage            = $parameters['perpage'] ?? 0;
+        $courseid           = $parameters['id'] ?? 0;
+        $searchuser         = $parameters['search'] ?? '';
+        $roleids            = $parameters['roleids'] ?? [];
+        $enrolinstanceid    = $parameters['enrolmethod'] ?? '';
+        $groupid            = $parameters['groupid'] ?? '';
+        $sortby             = $parameters['sortby'] ?? 'timemodified';
+        $sortdir            = $parameters['sortdir'] ?? SORT_DESC;
+        $download           = $parameters['download'] ?? 0;
 
         if (!$courseid) {
             return [];
         }
+        $context = \context_course::instance($courseid, IGNORE_MISSING);
+
         // ... pagination
         if ($download) {
             $limitnum = $limitfrom = 0;
@@ -587,12 +597,15 @@ class user_data_handler {
             $sortby = 'u.' . $sortby;
         } else if ($sortby == 'enrolldate') {
             $sortby = 'u.timemodified';
+        } else if ($sortby == 'lastcourseaccess') {
+            $sortby = 'lastcourseaccess';
         } else {
             $sortby = 'u.timemodified';
         }
         $sortdir = ($sortdir == SORT_ASC) ? 'ASC' : 'DESC';
         $orderby = "ORDER BY " . $sortby . " " . $sortdir;
 
+        // ... SQL fragments
         $sqlparams = [
             'guest_user_id' => 1,
             'user_deleted' => 1,
@@ -601,6 +614,11 @@ class user_data_handler {
             "u.id <> :guest_user_id",
             "u.deleted <> :user_deleted",
         ];
+        $jointable = [];
+        $jointable['role_assignments'] = "LEFT JOIN {role_assignments} ra ON ra.userid = u.id";
+        $jointable['user_lastaccess'] = "LEFT JOIN {user_lastaccess} ula ON ula.courseid = :courseid AND ula.userid = u.id";
+        $sqlparams['courseid'] = $courseid;
+
         // ... search by text
         if ($searchuser) {
             $sqlparams['search_username'] = "%" . $DB->sql_like_escape($searchuser) . "%";
@@ -631,7 +649,6 @@ class user_data_handler {
             });
             // ... now again if there are real roles user roles
             if (count($roleids) > 0) {
-                // $jointable['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
                 list($insql, $inparams) = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
                 $sqlparams = array_merge($sqlparams, $inparams);
                 $rolewherecondition[] = "ra.roleid $insql";
@@ -639,7 +656,33 @@ class user_data_handler {
             // ... join the role condition with OR
             if (count($rolewherecondition) > 0) {
                 $wherecondition[] = "(" . implode(" OR ", $rolewherecondition) . ")";
+
+                $jointable['context'] = "JOIN {context} ctx ON ra.contextid = ctx.id";
+                $sqlparams['contextlevel'] = CONTEXT_COURSE;
+                $wherecondition[] = 'ctx.contextlevel = :contextlevel';
+
+                list($insql, $inparams) = $DB->get_in_or_equal($courseid, SQL_PARAMS_NAMED, 'courseid');
+                $sqlparams = array_merge($sqlparams, $inparams);
+                $wherecondition[] = "ctx.instanceid $insql";
             }
+        }
+
+        // ... search by enrolmethod
+        if ($enrolinstanceid && $enrolinstanceid != 'all') {
+            $jointable['enrol'] = "JOIN {enrol} e ON e.courseid = :ecourseid";
+            $jointable['user_enrolments'] = "JOIN {user_enrolments} ue ON ue.enrolid = e.id AND ue.userid = u.id";
+
+            $sqlparams['ecourseid'] = $courseid;
+            $sqlparams['enrolinstanceid'] = $enrolinstanceid;
+            // $sqlparams['enrolstatus'] = ENROL_INSTANCE_ENABLED;
+            $wherecondition[] = 'e.id = :enrolinstanceid';
+            // $wherecondition[] = 'e.status = :enrolstatus';
+        }
+
+        // ... apply table join
+        $joinapply = '';
+        if (count($jointable) > 0) {
+            $joinapply = implode(" ", $jointable);
         }
 
         // ... apply where conditions with AND
@@ -649,38 +692,35 @@ class user_data_handler {
         }
 
         // ... SQL fragments
-
-        $roleid = '';
         $withcapability = '';
-        $groupids = '';
         $onlyactive = '';
-        $userfields = 'u.*, ra.roleid as roleid';
-
-        $context = \context_course::instance($courseid, IGNORE_MISSING);
+        $userfields = 'u.*, ra.roleid as roleid, ula.timeaccess as lastcourseaccess';
 
         // This builds SQL for enrolled users (subquery)
-        list($esql, $params) = get_enrolled_sql($context, $withcapability, $groupids, $onlyactive);
+        list($esql, $params) = get_enrolled_sql($context, $withcapability, $groupid, $onlyactive);
 
         $sql = "SELECT $userfields
             FROM {user} u
-            JOIN ($esql) je ON je.id = u.id
-            JOIN {role_assignments} ra ON ra.userid = u.id " .
-            $whereapply .
-            " GROUP By u.id " .
+            JOIN ($esql) je ON je.id = u.id " .
+            $joinapply . " " .
+            $whereapply . " " .
+            "GROUP By u.id " .
             $orderby;
-
         $params = array_merge($sqlparams, $params);
 
+        // echo "<pre>";
+        // print_r($sql);
+        // print_r($params);
+        // echo "</pre>";
+        // die;
         // ... execute query
         $data = $DB->get_records_sql($sql, $params, $limitfrom, $limitnum);
-        // var_dump($data);
-        // die;
 
         // ... count total records
         $sqlquery = "SELECT COUNT(DISTINCT u.id) 
             FROM {user} u 
-            JOIN ($esql) je ON je.id = u.id
-            JOIN {role_assignments} ra ON ra.userid = u.id " .
+            JOIN ($esql) je ON je.id = u.id " .
+            $joinapply . " " .
             $whereapply;
         $totalrecords = $DB->count_records_sql($sqlquery, $params);
 
@@ -697,5 +737,23 @@ class user_data_handler {
             'datato' => ($data) ? count($data) + $limitfrom : 0,
         ];
         return $records;
+    }
+
+    /**
+     * Returns the list of courses where the user is enrolled.
+     *
+     * @param array $parameters
+     * @return array List of enrolled courses.
+     */
+    public static function user_get_enrolled_courses($parameters) {
+        // ... get parameter
+        $userid = $parameters['id'] ?? 0;
+
+        if (!$userid) {
+            return [];
+        }
+
+        $mycourses = enrol_get_all_users_courses($userid, false, '*', 'visible DESC, fullname ASC, sortorder ASC');
+        return $mycourses;
     }
 }

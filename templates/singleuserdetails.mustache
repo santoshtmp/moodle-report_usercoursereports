@@ -26,48 +26,175 @@
             "profile_link": "http://example.com/user/profile.php?id=2",
             "profileimage_link": "http://example.com/theme/image.php/boost/core/1600000000/u/f2",
             "description": "This is a test description for Jane Doe."
-        },
-        "userdetaillist": [
-            { "label": "Email address", "value": "janedoe@example.com" },
-            { "label": "Country", "value": "Australia" },
-            { "label": "Timezone", "value": "Asia/Kathmandu" },
-            {
-            "customofields": true,
-            "categoryname": "Custom profile fields",
-            "label": "Hobby",
-            "value": "Cycling"
-            }
-        ]
+        }
     }
 
 }}
 
-<div class="d-flex align-items-center justify-content-center" >
-    {{#userinfo.profileimage_link}}
-    <img src="{{userinfo.profileimage_link}}" alt="{{userinfo.username}}" class="userpicture" width = "100" height = "100">
-    {{/userinfo.profileimage_link}}
-    <div class="d-flex ml-3 mt-auto mb-auto" >
-        {{#userinfo.firstname}}
-        <h2>
-            <a href="{{userinfo.profile_link}}">{{userinfo.firstname}} {{userinfo.lastname}}</a>
-        </h2>
-        {{/userinfo.firstname}}
+<div class="card shadow-lg rounded-3 singleuserdetail usercoursereports mt-4">
+    <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+        <h2 class="mb-0">{{#str}} userdetails {{/str}} </h2>
+        <div class="btn btn-sm btn-light d-flex align-items-center justify-content-center p-2"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#reportgeneraldetailcontent"
+            aria-expanded="true"
+            aria-controls="reportgeneraldetailcontent">
+            <i class="icon fa fa-chevron-down m-0"></i>
+        </div>
+    </div>
+   
+    <div id="reportgeneraldetailcontent" class="card-body collapse show" >
+   
+        <div class="d-flex align-items-center justify-content-center" >
+            {{#userinfo.profileimage_link}}
+            <img src="{{userinfo.profileimage_link}}" alt="{{userinfo.username}}" class="userpicture" width = "100" height = "100">
+            {{/userinfo.profileimage_link}}
+            <div class="d-flex ml-3 mt-auto mb-auto" >
+                {{#userinfo.firstname}}
+                <h2>
+                    <a href="{{userinfo.profile_link}}">{{userinfo.firstname}} {{userinfo.lastname}}</a>
+                </h2>
+                {{/userinfo.firstname}}
+            </div>
+        </div>
+
+        <div class="singleuserdetails mt-4 pb-3">
+            {{#userinfo.description}}
+                <div class="description mt-3 ml-4">{{{.}}}</div>
+            {{/userinfo.description}}
+
+            <ul class="list-group list-group-flush list-grid">
+                <li class="list-group-item">
+                    <strong>{{#str}} fullname {{/str}}:</strong>
+                    <span>{{userinfo.firstname}} {{userinfo.lastname}} </span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} username {{/str}}:</strong>
+                    <span>{{userinfo.username}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} email {{/str}}:</strong>
+                    <span>{{userinfo.email}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} authmethod, report_usercoursereports {{/str}}:</strong>
+                    <span>{{userinfo.auth}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} accountsuspended, report_usercoursereports {{/str}}:</strong>
+                    <span>
+                        {{#userinfo.suspended}}
+                            <span class="badge bg-danger text-white p-2">{{#str}} yes {{/str}}</span>
+                        {{/userinfo.suspended}}
+                        {{^userinfo.suspended}}
+                            <span class="badge bg-success text-white p-2">{{#str}} no {{/str}}</span>
+                        {{/userinfo.suspended}}
+                    </span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} accountconfirmed, report_usercoursereports {{/str}}:</strong>
+                    <span>
+                        {{#userinfo.confirmed}}
+                            {{#str}} confirmed {{/str}}
+                        {{/userinfo.confirmed}}
+                        {{^userinfo.confirmed}}
+                            {{#str}} confirmednot {{/str}}
+                        {{/userinfo.confirmed}}
+                    </span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} city {{/str}}:</strong>
+                    <span>{{userinfo.city}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} country {{/str}}:</strong>
+                    <span>{{userinfo.country_name}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} address {{/str}}:</strong>
+                    <span>{{userinfo.address}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} timezone {{/str}}:</strong>
+                    <span>{{userinfo.timezone}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} institution {{/str}}:</strong>
+                    <span>{{userinfo.institution}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} department {{/str}}:</strong>
+                    <span>{{userinfo.department}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} phone {{/str}}:</strong>
+                    <span>{{userinfo.phone1}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} phone2 {{/str}}:</strong>
+                    <span>{{userinfo.phone2}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} interests, core {{/str}}:</strong>
+                    <span>{{userinfo.interests}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} language {{/str}}:</strong>
+                    <span>{{userinfo.language}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} mycourses {{/str}}:</strong>
+                    <span>{{userinfo.usercoursecount}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} roles, core {{/str}}:</strong>
+                    <span>{{allroles}}</span>
+                </li>
+                {{#userinfo.customofields}}
+                    <li class="list-group-item">
+                        <strong>{{categoryname}} - {{name}}:</strong>
+                        <span>{{displayvalue}}</span>
+                    </li>
+                {{/userinfo.customofields}}
+
+                <li class="list-group-item">
+                    <strong>{{#str}} accountcreated, report_usercoursereports {{/str}}:</strong>
+                    <span>{{userinfo.timecreated}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} accountmodified, report_usercoursereports {{/str}}:</strong>
+                    <span>{{userinfo.timemodified}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} firstaccess, core {{/str}}:</strong>
+                    <span>{{userinfo.firstaccess}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} lastaccess, core {{/str}}:</strong>
+                    <span>{{userinfo.lastaccess}}</span>
+                </li>
+                <li class="list-group-item">
+                    <strong>{{#str}} lastlogin, core {{/str}}:</strong>
+                    <span>{{userinfo.lastlogin}}</span>
+                </li>
+          
+            </ul>
+        </div>
+
     </div>
 </div>
 
-<div class="singleuserdetails mt-4 pb-3">
-    <h3>{{#str}} userdetails {{/str}} </h3>
-    <ul class="userdetail-list row">
-        {{#userdetaillist}}
-        <li class="col-md-6 p-1">
-            {{^customofields}}
-                <strong>{{label}}:</strong> {{value}}
-            {{/customofields}}
-            {{#customofields}}
-                <strong>{{categoryname}} - {{label}}:</strong> {{value}}
-            {{/customofields}}
-        </li>
-        {{/userdetaillist}}
-    </ul>
-    <p class="description">{{userinfo.description}}</p>
+
+<div class="card shadow-lg rounded-3 singleuserdetail my-enrolled-courses mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="mb-0">{{#str}} mycourses {{/str}} </h2>
+    </div>
+    <div class="card-body">
+        <div id="report-usercoursereports-filter-area">
+            <div id="filter-loading-wrapper" class="d-flex justify-content-center">
+                {{>core/loading}}
+            </div>
+        </div>
+    </div>
 </div>

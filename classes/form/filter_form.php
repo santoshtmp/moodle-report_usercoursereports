@@ -261,6 +261,7 @@ class filter_form extends \moodleform {
             'min' => 1,
             'max' => 1000,
             'size' => 25,
+            'default-value' => 50,
             'class' => 'usercoursereports-filter-field',
         ]);
         $mform->setType('perpage', PARAM_INT);

@@ -58,6 +58,7 @@ class usercoursereports {
             'courseformat'      => optional_param('courseformat', '', PARAM_TEXT),
             'coursevisibility'  => optional_param('coursevisibility', '', PARAM_TEXT),
             'enrolmethod'       => optional_param('enrolmethod', '', PARAM_TEXT),
+            'groupid'           => optional_param('groupid', 0, PARAM_INT),
             'createdfrom'       => optional_param_array('createdfrom', 0, PARAM_INT),
             'createdto'         => optional_param_array('createdto', 0, PARAM_INT),
             'startdatefrom'     => optional_param_array('startdatefrom', 0, PARAM_INT),
@@ -154,108 +155,20 @@ class usercoursereports {
     /**
      * Generates a detailed profile view for a single user.
      *
-     * @param int $userid The ID of the user to display.
+     * @param array $parameters
      * @return string HTML output for the user's profile and enrolled courses.
      */
-    public static function get_singleuser_info($userid) {
+    public static function get_singleuser_info($parameters) {
         global $OUTPUT;
-        $userinfo = user_data_handler::get_user_info($userid, false);
-        $languages = get_string_manager()->get_list_of_translations();
-        $enrolledcourses = $userinfo['enrolled_courses'];
-        unset($userinfo['enrolled_courses']);
-        $userdetaillist = [
-            ['label' => get_string('fullname'), 'value' => $userinfo['firstname'] . ' ' . $userinfo['lastname']],
-            ['label' => get_string('username'), 'value' => $userinfo['username']],
-            ['label' => get_string('email'), 'value' => $userinfo['email']],
-            ['label' => get_string('city'), 'value' => $userinfo['city']],
-            ['label' => get_string('country'), 'value' => $userinfo['country_name']],
-            ['label' => get_string('address'), 'value' => $userinfo['address']],
-            ['label' => get_string('timezone'), 'value' => $userinfo['timezone']],
-            ['label' => get_string('institution'), 'value' => $userinfo['institution']],
-            ['label' => get_string('department'), 'value' => $userinfo['department']],
-            ['label' => get_string('phone1'), 'value' => $userinfo['phone1']],
-            ['label' => get_string('phone2'), 'value' => $userinfo['phone2']],
-            ['label' => get_string('accountcreated', 'report_usercoursereports'), 'value' => $userinfo['timecreated']],
-            ['label' => get_string('accountmodified', 'report_usercoursereports'), 'value' => $userinfo['timemodified']],
-            ['label' => get_string('firstaccess'), 'value' => $userinfo['firstaccess']],
-            ['label' => get_string('lastaccess'), 'value' => $userinfo['lastaccess']],
-            ['label' => get_string('lastlogin'), 'value' => $userinfo['lastlogin']],
-            ['label' => get_string('interests'), 'value' => $userinfo['interests']],
-            ['label' => get_string('roles'), 'value' => implode(", ", array_column($userinfo['roles'], 'name'))],
-        ];
-        if (count($languages) > 1) {
-            $userdetaillist[] = ['label' => get_string('language'), 'value' => $languages[$userinfo['language']]];
-        }
-        if ($userinfo['customofields'] && is_array($userinfo['customofields'])) {
-            foreach ($userinfo['customofields'] as $key => $customofields) {
-                $userdetaillist[] = [
-                    'customofields' => true,
-                    'categoryname' => $customofields['categoryname'],
-                    'label' => $customofields['name'],
-                    'value' => $customofields['displayvalue'],
-                ];
-            }
-        }
+        $userinfo = user_data_handler::get_user_info($parameters['id'], false);
         $context = [
             'userinfo' => $userinfo,
-            'userdetaillist' => $userdetaillist,
+            'allroles' => implode(', ', array_column($userinfo['roles'], 'name')),
         ];
 
         // ... output content
         $contents = '';
         $contents .= $OUTPUT->render_from_template("report_usercoursereports/singleuserdetails", $context);
-
-        // ... user enrolled courses.
-        $contents .= html_writer::start_div('my-enrolled-courses mt-4 mb-4');
-        $contents .= html_writer::tag('h3', get_string('mycourses'));
-        $contents .= html_writer::start_tag('table', ['id' => 'user-enrolled-course-table', 'class' => 'generaltable generalbox']);
-        $contents .= html_writer::start_tag('thead');
-        $contents .= html_writer::tag(
-            'tr',
-            html_writer::tag('th', get_string('coursename', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('enrolldate', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('courseprogress', 'report_usercoursereports')) .
-                html_writer::tag('th', get_string('courserole', 'report_usercoursereports'))
-        );
-        $contents .= html_writer::end_tag('thead');
-        $contents .= html_writer::start_tag('tbody', ['data-type' => 'user-course-report']);
-        if ($enrolledcourses && is_array($enrolledcourses)) {
-            foreach ($enrolledcourses as $key => $course) {
-                $course = (array)$course;
-                $contents .= html_writer::start_tag(
-                    'tr',
-                    [
-                        'data-id' => $course['id'],
-                        'data-fullname' => $course['fullname'],
-                    ]
-                );
-                $contents .= html_writer::tag(
-                    'td',
-                    html_writer::link(
-                        $course['course_link'],
-                        $course['fullname']
-                    )
-                );
-                $contents .= html_writer::tag('td', $course['enrolments_timecreated']);
-                $contents .= html_writer::tag('td', $course['percentage'] . "%");
-                $contents .= html_writer::tag(
-                    'td',
-                    html_writer::alist(
-                        array_column($course['mycourseroles'], 'name'),
-                        ['style' => 'list-style: none; padding-left: 0; margin: 0;'],
-                    )
-                );
-                $contents .= html_writer::end_tag('tr');
-            }
-        } else {
-            $contents .= html_writer::tag(
-                'tr',
-                html_writer::tag('td', get_string('nodata_available', 'report_usercoursereports'), ['colspan' => 4])
-            );
-        }
-        $contents .= html_writer::end_tag('tbody');
-        $contents .= html_writer::end_tag('table');
-        $contents .= html_writer::end_div();
 
         return $contents;
     }
@@ -291,7 +204,6 @@ class usercoursereports {
         $context = [
             'courseinfo' => $courseinfo,
             'filtercourseusers' => $filtercourseusers->render(),
-            'enrolleduserTable' => tablereport::course_enrolled_users($parameters),
         ];
         $contents = '';
         $contents .= $OUTPUT->render_from_template("report_usercoursereports/singlecoursedetails", $context);

@@ -26,6 +26,7 @@
 namespace report_usercoursereports\form;
 
 use moodleform;
+use report_usercoursereports\course_data_handler;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -48,12 +49,15 @@ class filter_courseusers extends \moodleform {
     public function definition() {
         $mform = $this->_form;
         $type = $this->_customdata['type'] ?? '';
+        $courseid = $this->_customdata['id'] ?? SITEID;
         $search = $this->_customdata['search'] ?? '';
         $roleids = $this->_customdata['roleids'] ?? [];
+        $groupid = $this->_customdata['groupid'] ?? '';
+        $enrolmethod = $this->_customdata['enrolmethod'] ?? '';
         $perpage = (int)$this->_customdata['perpage'] ?? 50;
         $filterfieldwrapperexpanded = false;
 
-        if ($search || ($perpage && $perpage != 50)) {
+        if ($search || $enrolmethod || $groupid || $roleids || ($perpage && $perpage != 50)) {
             $filterfieldwrapperexpanded = true;
         }
         // ... header
@@ -68,26 +72,55 @@ class filter_courseusers extends \moodleform {
         $mform->setType('search', PARAM_TEXT);
         $mform->setDefault('search', $search);
 
-        // // User role search..
-        // $mform->addElement(
-        //     'autocomplete',
-        //     'roleids',
-        //     get_string('roles'),
-        //     \report_usercoursereports\user_data_handler::get_all_roles(0, [-1], [], CONTEXT_COURSE),
-        //     [
-        //         'multiple' => true,
-        //         'noselectionstring' => get_string('allroles', 'report_usercoursereports'),
-        //         'class' => 'usercoursereports-filter-field',
-        //     ]
-        // );
-        // $mform->setType('roleids', PARAM_INT);
-        // $mform->setDefault('roleids', $roleids);
+        // User role search..
+        $mform->addElement(
+            'autocomplete',
+            'roleids',
+            get_string('roles'),
+            \report_usercoursereports\user_data_handler::get_all_roles(0, [], ['frontpage', 'user', 'guest']),
+            [
+                'multiple' => true,
+                'noselectionstring' => get_string('allroles', 'report_usercoursereports'),
+                'class' => 'usercoursereports-filter-field',
+            ]
+        );
+        $mform->setType('roleids', PARAM_INT);
+        $mform->setDefault('roleids', $roleids);
+
+        // Enrolment method dropdown.
+        $enroloptions = ['all' => get_string('all')] + course_data_handler::get_course_enrollmentmethods($courseid, true);
+        $mform->addElement(
+            'select',
+            'enrolmethod',
+            get_string('enrolmentmethods', 'report_usercoursereports'),
+            $enroloptions,
+            ['class' => 'usercoursereports-filter-field']
+        );
+        $mform->setType('enrolmethod', PARAM_TEXT);
+        $mform->setDefault('enrolmethod', $enrolmethod);
+
+        // Course group dropdown.
+        $coursegroupoptions = ['all' => get_string('all')];
+        $allgroups = groups_get_all_groups($courseid);
+        foreach ($allgroups as $key => $group) {
+            $coursegroupoptions[$group->id] = format_string($group->name);
+        }
+        $mform->addElement(
+            'select',
+            'groupid',
+            get_string('groups'),
+            $coursegroupoptions,
+            ['class' => 'usercoursereports-filter-field']
+        );
+        $mform->setType('groupid', PARAM_INT);
+        $mform->setDefault('groupid', $groupid);
 
         // ... Per page number input (max 1000).
         $mform->addElement('text', 'perpage', get_string('perpage', 'report_usercoursereports'), [
             'min' => 1,
             'max' => 1000,
             'size' => 25,
+            'default-value' => 50,
             'class' => 'usercoursereports-filter-field',
         ]);
         $mform->setType('perpage', PARAM_INT);
