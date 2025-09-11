@@ -184,7 +184,7 @@ class user_data_handler {
      * @param array $excluderoleids Role IDs to exclude from the results.
      * @param array $excludearchetype Role archetypes to exclude from the results.
      * @param int $contextlevel Optional context level to filter roles by.
-     * @return array For a specific user: list of arrays with keys (id, shortname, name). 
+     * @return array For a specific user: list of arrays with keys (id, shortname, name).
      *      For all roles: associative array of roleid => rolename.
      */
     public static function get_all_roles($userid = 0, $excluderoleids = [], $excludearchetype = [], $contextlevel = 0) {

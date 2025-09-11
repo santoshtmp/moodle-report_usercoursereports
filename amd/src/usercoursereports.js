@@ -122,8 +122,8 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                             ? readmoreText
                             : showlessText;
                     });
-                    return true;
                 });
+                return true;
             }).catch(err => {
                 window.console.error(err);
                 return false;
@@ -238,7 +238,6 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
 
             // Filter the table clear btn click.
             $(document).on('click', '#' + filterFormId + ' #clearfilter', function(e) {
-                // const formquerystring = (pagedata.pagereseturl).split('?')[1];
                 let formquerystring = '';
                 if (pagedata.pagereseturl) {
                     let url = new URL(pagedata.pagereseturl, window.location.origin);
@@ -251,6 +250,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                     getFilterReportTable(formquerystring);
                     return formReset(filterFormId);
                 }
+                return true;
             });
 
             // Filter on single select field change.
