@@ -685,7 +685,9 @@ class tablereport {
     }
 
     /**
-     * @param array $parameters
+     * Generate a report table of courses where a user is enrolled.
+     *
+     * @param array $parameters Parameters including user ID, pagination, and filter options.
      * @return string HTML output of the report table.
      */
     public static function user_enrolled_courses($parameters) {
