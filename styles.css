@@ -74,6 +74,12 @@ input[type="checkbox"]:focus {
     box-shadow: unset;
 }
 
+#page-report_usercoursereports .report-usercoursereports-filter .usercoursereports-filter-field > div {
+    width: 100%;
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+
 #page-report_usercoursereports #report-usercoursereports-filter-area {
     position: relative;
 }

@@ -266,12 +266,15 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             });
 
             // Filter on single select field change.
+            $('#usercoursereports-single-search #fitem_id_id').removeClass('mb-3');
             $('#usercoursereports-single-search select#id_id').on('change', function() {
                 var selectedValue = $(this).val();
                 if (selectedValue) {
                     var form = $(this).closest('form');
-                    form.attr('data-form-dirty', false);
-                    form.submit();
+                    setTimeout(function() {
+                        form.attr('data-form-dirty', false);
+                        form.submit();
+                    }, 0);
                 }
                 return true;
             });

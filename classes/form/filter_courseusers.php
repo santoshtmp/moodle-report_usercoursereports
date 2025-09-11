@@ -77,7 +77,7 @@ class filter_courseusers extends \moodleform {
             'autocomplete',
             'roleids',
             get_string('roles'),
-            \report_usercoursereports\user_data_handler::get_all_roles(0, [], ['frontpage', 'user', 'guest']),
+            \report_usercoursereports\user_data_handler::get_all_roles(0, ['-1'], ['frontpage', 'user', 'guest']),
             [
                 'multiple' => true,
                 'noselectionstring' => get_string('allroles', 'report_usercoursereports'),
