@@ -122,6 +122,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                             ? readmoreText
                             : showlessText;
                     });
+                    return true;
                 });
                 return true;
             }).catch(err => {
