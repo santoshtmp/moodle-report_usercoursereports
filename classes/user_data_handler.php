@@ -216,9 +216,11 @@ class user_data_handler {
             return $rolesdata;
         }
         // Get all roles.
-        $rolesdata = [
-            '-1' => get_string('admin'),
-        ];
+        if (!in_array('-1', $excluderoleids)) {
+            $rolesdata = [
+                '-1' => get_string('admin'),
+            ];
+        }
         if ($contextlevel) {
             $sql = "SELECT r.*
                     FROM {role} r
@@ -703,7 +705,7 @@ class user_data_handler {
             JOIN ($esql) je ON je.id = u.id " .
             $joinapply . " " .
             $whereapply . " " .
-            "GROUP By u.id " .
+            "GROUP By u.id, roleid, lastcourseaccess " .
             $orderby;
         $params = array_merge($sqlparams, $params);
 

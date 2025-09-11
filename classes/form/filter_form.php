@@ -242,7 +242,7 @@ class filter_form extends \moodleform {
             // ... Enrollment method
             $enroloptions = ['all' => get_string('all')];
             foreach (enrol_get_plugins(true) as $pluginname => $plugin) {
-                $enroloptions[$pluginname] = $plugin->get_name();
+                $enroloptions[$pluginname] = get_string('pluginname', 'enrol_' . $plugin->get_name());
             }
             // Enrolment method dropdown.
             $mform->addElement(
