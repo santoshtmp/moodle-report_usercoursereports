@@ -83,7 +83,7 @@ class usercoursereport_flextablelib extends \flexible_table {
     /**
      * Generate the HTML for the table preferences reset button.
      *
-     * @return string HTML fragment, empty string if no need to reset
+     * @param bool $showreset
      * @return string HTML fragment, or empty string if no reset is possible or needed.
      */
     protected function render_reset_button($showreset = false) {

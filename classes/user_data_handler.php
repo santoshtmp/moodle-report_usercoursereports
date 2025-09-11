@@ -109,6 +109,7 @@ class user_data_handler {
      * Returns user profile image URL.
      *
      * @param stdClass|id $user User object or id.
+     * @param bool $imageurl.
      * @return string URL of user profile image.
      */
     public static function get_user_profile_image($user, $imageurl = true) {
@@ -182,7 +183,7 @@ class user_data_handler {
      * @param int $userid User ID (default 0 = return all roles).
      * @param array $excluderoleids Role IDs to exclude.
      * @param array $excludearchetype Role archetype to exclude.
-     * @param int $contextleve.
+     * @param int $contextlevel.
      * @return array List of roles (id, shortname, name).
      */
     public static function get_all_roles($userid = 0, $excluderoleids = [], $excludearchetype = [], $contextlevel = 0) {

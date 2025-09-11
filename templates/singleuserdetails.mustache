@@ -69,17 +69,17 @@
 
 }}
 
-<div class="card shadow-lg rounded-3 singleuserdetail usercoursereports mt-4">
+<div class="card shadow-lg rounded-3 singleuserdetail usercoursereports mt-4" data-userid={{userinfo.id}}>
     <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
         <h2 class="mb-0">{{#str}} userdetails {{/str}} </h2>
-        <div class="btn btn-sm btn-light d-flex align-items-center justify-content-center p-2"
+        <button class="btn btn-sm btn-light d-flex align-items-center justify-content-center p-2"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#reportgeneraldetailcontent"
             aria-expanded="true"
             aria-controls="reportgeneraldetailcontent">
             <i class="icon fa fa-chevron-down m-0"></i>
-        </div>
+        </button>
     </div>
    
     <div id="reportgeneraldetailcontent" class="card-body collapse show" >
@@ -223,8 +223,7 @@
     </div>
 </div>
 
-
-<div class="card shadow-lg rounded-3 singleuserdetail my-enrolled-courses mt-4">
+<div class="card shadow-lg rounded-3 singleuserdetail my-enrolled-courses mt-4" data-userid={{userinfo.id}}>
     <div class="card-header d-flex align-items-center justify-content-between">
         <h2 class="mb-0">{{#str}} mycourses {{/str}} </h2>
     </div>

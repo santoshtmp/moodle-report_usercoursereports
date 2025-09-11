@@ -685,7 +685,8 @@ class tablereport {
     }
 
     /**
-     *
+     * @param array $parameters
+     * @return string HTML output of the report table.
      */
     public static function user_enrolled_courses($parameters) {
         global $DB;
