@@ -69,6 +69,11 @@
     padding-left: 3rem;
 }
 
+#page-report_usercoursereports .report-usercoursereports-filter .filter-grid .usercoursereports-filter-field
+input[type="checkbox"]:focus {
+    box-shadow: unset;
+}
+
 #page-report_usercoursereports #report-usercoursereports-filter-area {
     position: relative;
 }
