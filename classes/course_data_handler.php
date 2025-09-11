@@ -384,13 +384,15 @@ class course_data_handler {
             if ($returnonlyname) {
                 $enrollmentmethods[$courseenrolinstance->id] = $enrolplugin->get_instance_name($courseenrolinstance) . $isdisable;
             } else {
+                $role = $DB->get_record('role', ['id' => $courseenrolinstance->roleid]);
+                $rolename = $role ? role_get_name($role) : get_string('noroles', 'role');
                 $instance = [
                     'enrol' => $courseenrolinstance->enrol,
                     'name' => $enrolplugin->get_instance_name($courseenrolinstance) . $isdisable,
                     'cost' => $courseenrolinstance->cost,
                     'currency' => $courseenrolinstance->currency,
                     'roleid' => $courseenrolinstance->roleid,
-                    'rolename' => role_get_name($DB->get_record('role', ['id' => $courseenrolinstance->roleid])),
+                    'rolename' => $rolename,
                 ];
                 $enrollmentmethods[] = $instance;
             }
