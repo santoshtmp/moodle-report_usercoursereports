@@ -106,11 +106,11 @@ class user_data_handler {
     }
 
     /**
-     * Returns user profile image URL.
+     * Returns the user profile image or its URL.
      *
-     * @param stdClass|id $user User object or id.
-     * @param bool $imageurl.
-     * @return string URL of user profile image.
+     * @param stdClass|int $user User object or user ID.
+     * @param bool $imageurl Whether to return the image URL (true) or rendered HTML (false).
+     * @return string User profile image URL or HTML markup.
      */
     public static function get_user_profile_image($user, $imageurl = true) {
         global $PAGE, $OUTPUT, $DB;
@@ -180,11 +180,12 @@ class user_data_handler {
     /**
      * Returns all roles for a user or all available roles.
      *
-     * @param int $userid User ID (default 0 = return all roles).
-     * @param array $excluderoleids Role IDs to exclude.
-     * @param array $excludearchetype Role archetype to exclude.
-     * @param int $contextlevel.
-     * @return array List of roles (id, shortname, name).
+     * @param int $userid User ID (default 0 = return all available roles).
+     * @param array $excluderoleids Role IDs to exclude from the results.
+     * @param array $excludearchetype Role archetypes to exclude from the results.
+     * @param int $contextlevel Optional context level to filter roles by.
+     * @return array For a specific user: list of arrays with keys (id, shortname, name). 
+     *      For all roles: associative array of roleid => rolename.
      */
     public static function get_all_roles($userid = 0, $excluderoleids = [], $excludearchetype = [], $contextlevel = 0) {
         global $DB;

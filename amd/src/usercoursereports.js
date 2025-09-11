@@ -122,9 +122,11 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                             ? readmoreText
                             : showlessText;
                     });
+                    return true;
                 });
             }).catch(err => {
                 window.console.error(err);
+                return false;
             });
         }
     }
@@ -171,7 +173,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             // Trigger change if any UI plugin relies on it.
             $wrapper.find('input, select, textarea').trigger('change');
         });
-
+        return true;
     }
 
     return {
@@ -229,8 +231,9 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
                     getFilterReportTable(formquerystring);
-                    formReset(filterFormId);
+                    return formReset(filterFormId);
                 }
+                return false;
             });
 
             // Filter the table clear btn click.
@@ -242,12 +245,11 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                     formquerystring = url.searchParams.toString();
                 }
                 if (formquerystring) {
-                    getFilterReportTable(formquerystring);
-                    formReset(filterFormId);
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
-                    return false;
+                    getFilterReportTable(formquerystring);
+                    return formReset(filterFormId);
                 }
             });
 
@@ -259,6 +261,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                     form.attr('data-form-dirty', false);
                     form.submit();
                 }
+                return true;
             });
 
             // On load user single detail load the course.
