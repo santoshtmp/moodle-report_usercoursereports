@@ -67,7 +67,7 @@ class filter_form extends \moodleform {
             ($type == 'course' &&  ($categoryids || $courseformat || $coursevisibility || $enrolmethod ||
                 $createdfrom || $createdto || $startdatefrom || $startdateto)) ||
             ($type == 'user' &&  ($courseids || $roleids || $suspended || $confirmed)) ||
-            ($search || $perpage != 50)
+            ($search || ($perpage && $perpage != 50))
         ) {
             $filterfieldwrapperexpanded = true;
         }
@@ -105,7 +105,7 @@ class filter_form extends \moodleform {
                 'autocomplete',
                 'roleids',
                 get_string('roles'),
-                \report_usercoursereports\user_data_handler::get_all_roles(0, [7, 8]),
+                \report_usercoursereports\user_data_handler::get_all_roles(0, [], ['frontpage', 'user', 'guest']),
                 [
                     'multiple' => true,
                     'noselectionstring' => get_string('allroles', 'report_usercoursereports'),
@@ -261,6 +261,7 @@ class filter_form extends \moodleform {
             'min' => 1,
             'max' => 1000,
             'size' => 25,
+            'default-value' => 50,
             'class' => 'usercoursereports-filter-field',
         ]);
         $mform->setType('perpage', PARAM_INT);
@@ -269,15 +270,25 @@ class filter_form extends \moodleform {
         // Close two-column grid.
         $mform->addElement('html', '</div>');
 
+        // ... reset table
+        $mform->addElement('hidden', 'treset');
+        $mform->setType('treset', PARAM_INT);
+        $mform->setDefault('treset', 1);
+
         // Action btn.
         $buttonarray = [];
         $buttonarray[] = $mform->createElement(
             'submit',
             'applyfilter',
             get_string('applyfilter', 'report_usercoursereports'),
-            ['id' => 'applyfilter', 'class' => 'apply-filter form-submit']
+            ['id' => 'applyfilter', 'class' => 'apply-filter form-submit mt-4']
         );
-        $buttonarray[] = $mform->createElement('cancel', '', get_string('clear'), ['id' => 'clearfilter']);
+        $buttonarray[] = $mform->createElement(
+            'cancel',
+            '',
+            get_string('clear'),
+            ['id' => 'clearfilter', 'class' => 'clear-filter form-submit mt-4']
+        );
         $mform->addGroup($buttonarray, 'buttonar', '', [''], false);
     }
 
