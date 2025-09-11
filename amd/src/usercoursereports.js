@@ -35,19 +35,19 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
         $('#' + filterAreaId).attr('aria-busy', 'true');
         $('#' + applyFilterBtnId).prop('disabled', true);
         $('#filter-loading-wrapper').show();
-        // Make AJAX call
+        // Make AJAX call.
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
             args: {querystring: formquerystring}
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function(response) {
-            // Update report filter table content
+            // Update report filter table content.
             if (response.status && response.reporttable) {
                 window.history.replaceState('', 'url', response.pageurl);
                 $('#' + filterAreaId).replaceWith(response.reporttable);
             }
-            // Field validation and error
+            // Field validation and error.
             $('#' + filterFormId + ' [id^=id_error_]').html('').hide();
             if (!response.is_validated) {
                 const validationErrors = response.validation_errors || [];
@@ -82,11 +82,11 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
     }
 
     /**
-     * usercoursereports btn toggle
+     * Single report usercoursereports btn toggle.
      */
     function usercoursereportsToggleBtn() {
 
-        // Toggle course detail content
+        // Toggle course detail content.
         $(document).on('click', '.usercoursereports [aria-controls="reportgeneraldetailcontent"]', function() {
             const $icon = $(this).find('.fa');
             if ($(this).attr('aria-expanded') === 'true') {
@@ -99,7 +99,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
             $('#reportgeneraldetailcontent').toggle('show');
         });
 
-        // Read more / show less for summary
+        // Read more / show less for summary.
         if (document.querySelector('.usercoursereports .readmore-btn')) {
             const readmorePromise = str.get_string('readmore', 'report_usercoursereports');
             const showlessPromise = str.get_string('showless', 'report_usercoursereports');
@@ -109,7 +109,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                     const btn = card.querySelector(".readmore-btn");
 
                     if (!summary || !btn) {
-                        return;
+                        return false;
                     }
 
                     if (summary.scrollHeight > summary.clientHeight) {
@@ -123,6 +123,8 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                             : showlessText;
                     });
                 });
+            }).catch(err => {
+                window.console.error(err);
             });
         }
     }
@@ -134,16 +136,16 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
     function formReset(filterFormId) {
         const form = $("#" + filterFormId);
         if (!form.length) {
-            return;
+            return false;
         }
 
-        // Reset the native form
+        // Reset the native form.
         form[0].reset();
 
-        // Clear autocomplete selections
+        // Clear autocomplete selections.
         form.find(".form-autocomplete-selection").html('');
 
-        // Reset all fields inside wrappers
+        // Reset all fields inside wrappers.
         form.find(".usercoursereports-filter-field").each(function() {
             var $wrapper = $(this);
 
@@ -166,7 +168,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 }
             });
 
-            // Trigger change if any UI plugin relies on it
+            // Trigger change if any UI plugin relies on it.
             $wrapper.find('input, select, textarea').trigger('change');
         });
 
@@ -174,26 +176,26 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
 
     return {
         init: function(pagedata) {
-            // Remove .col-md-3 and .col-md-9 from divs inside .usercoursereports-filter-field
+            // Remove .col-md-3 and .col-md-9 from divs inside .usercoursereports-filter-field.
             $('.usercoursereports-filter-field div.col-md-3, .usercoursereports-filter-field div.col-md-9').each(function() {
                 $(this).removeClass('col-md-3 col-md-9');
             });
 
-            // Change per page field type from text to number
+            // Change per page field type from text to number.
             if (document.getElementById('id_perpage')) {
                 document.getElementById('id_perpage').setAttribute('type', 'number');
             }
 
-            // Handle course summary read more/less button toggle
+            // Handle course summary read more/less button toggle.
             usercoursereportsToggleBtn();
 
-            // Remove name from autocomplete hidden field
+            // Remove name from autocomplete hidden field.
             $('input[value="_qf__force_multiselect_submission"]').each(function() {
                 $(this).val('');
                 $(this).attr('name', '');
             });
 
-            // Filter on form submit
+            // Filter on form submit.
             $('#' + filterFormId).on('submit', function(e) {
                 const clickedButton = $(this).find('input[type=submit]:focus').attr('name');
                 if (clickedButton !== 'cancel') {
@@ -221,7 +223,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 }
             });
 
-            // Filter the table on reset link click
+            // Filter the table on reset link click.
             $(document).on('click', '#' + filterAreaId + ' .resettable a', function(e) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
@@ -231,7 +233,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 }
             });
 
-            // Filter the table clear btn click
+            // Filter the table clear btn click.
             $(document).on('click', '#' + filterFormId + ' #clearfilter', function(e) {
                 // const formquerystring = (pagedata.pagereseturl).split('?')[1];
                 let formquerystring = '';
@@ -249,7 +251,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 }
             });
 
-            // Filter on single select field change
+            // Filter on single select field change.
             $('#usercoursereports-single-search select#id_id').on('change', function() {
                 var selectedValue = $(this).val();
                 if (selectedValue) {
@@ -259,7 +261,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 }
             });
 
-            // On load user single detail load the course
+            // On load user single detail load the course.
             if (
                 $('.singleuserdetail.my-enrolled-courses #report-usercoursereports-filter-area').length ||
                 $('.singlecoursedetails.courseparticipation #report-usercoursereports-filter-area').length
