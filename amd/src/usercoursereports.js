@@ -155,7 +155,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
         // Reset all fields inside wrappers.
         form.find(".usercoursereports-filter-field").each(function() {
             var $wrapper = $(this);
-            const selectDateEnableID=[
+            const selectDateEnableID = [
                 'id_startdatefrom_enabled',
                 'id_startdateto_enabled',
                 'id_createdfrom_enabled',
@@ -172,10 +172,10 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                         $el.val('all');
                     }
                 } else if (type === 'checkbox') {
-                    if(selectDateEnableID.includes(id)){
+                    if (selectDateEnableID.includes(id)) {
                         $el.prop('checked', true);
                         $el.parent().trigger('click');
-                    }else{
+                    } else {
                         $el.prop('checked', false);
                     }
                 } else if (type === 'number') {
