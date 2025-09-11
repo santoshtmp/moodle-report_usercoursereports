@@ -55,6 +55,7 @@ class get_report_table extends external_api {
         return new external_function_parameters(
             [
                 'querystring' => new external_value(PARAM_RAW, 'Filter form serialize querystring'),
+                'formdata' => new external_value(PARAM_BOOL, 'check if this is formdata or sorting or pagination'),
             ]
         );
     }
@@ -64,9 +65,10 @@ class get_report_table extends external_api {
      * Executes the API call to retrieve the report table.
      *
      * @param string $querystring
+     * @param bool $formdata
      * @return array List of courses or users
      */
-    public static function execute($querystring) {
+    public static function execute($querystring, $formdata) {
         $filterdata = [
             'status' => true,
             'is_validated' => true,
@@ -76,6 +78,7 @@ class get_report_table extends external_api {
         // Validate the incoming parameters according to execute_parameters().
         $param = self::validate_parameters(self::execute_parameters(), [
             'querystring' => $querystring,
+            'formdata' => $formdata,
         ]);
         $context = \context_system::instance();
         self::validate_context($context);
@@ -98,28 +101,33 @@ class get_report_table extends external_api {
             }
 
             // ... check if the form data or pagination data.
-            if ($data['_qf__report_usercoursereports_form_filter_form'] ?? 0) {
-                $filterform = new filter_form(null, $data, 'GET', '', null, true, $data);
-            } else if ($data['_qf__report_usercoursereports_form_filter_courseusers'] ?? 0) {
-                $filterform = new filter_courseusers(null, $data, 'GET', '', null, true, $data);
-            } else {
-                $filterform = '';
-            }
-            // ... check and get validation message for filterform
-            if ($filterform) {
-                $isvalidated = $filterform->is_validated();
-                if (!$isvalidated) {
-                    $errors = $filterform->validation($data, []);
-                    $validationerrors = [];
-                    foreach ($errors as $key => $errorvalue) {
-                        $validationerrors[] = [
-                            'field' => $key,
-                            'error' => $errorvalue,
-                        ];
+            if ($param['formdata']) {
+                if ($data['_qf__report_usercoursereports_form_filter_form'] ?? 0) {
+                    $filterform = new filter_form(null, $data, 'GET', '', null, true, $data);
+                } else if ($data['_qf__report_usercoursereports_form_filter_courseusers'] ?? 0) {
+                    $filterform = new filter_courseusers(null, $data, 'GET', '', null, true, $data);
+                } else {
+                    $filterform = '';
+                }
+                // ... check and get validation message for filterform
+                if ($filterform) {
+                    $isvalidated = $filterform->is_validated();
+                    if (!$isvalidated) {
+                        $errors = $filterform->validation($data, []);
+                        $validationerrors = [];
+                        foreach ($errors as $key => $errorvalue) {
+                            $validationerrors[] = [
+                                'field' => $key,
+                                'error' => $errorvalue,
+                            ];
+                        }
+                        $filterdata['status'] = $isvalidated;
+                        $filterdata['is_validated'] = $isvalidated;
+                        $filterdata['validation_errors'] = $validationerrors;
+                    } else {
+                        // ... get the form data if validation is true
+                        $parameters = array_merge($parameters, (array)$filterform->get_data());
                     }
-                    $filterdata['status'] = $isvalidated;
-                    $filterdata['is_validated'] = $isvalidated;
-                    $filterdata['validation_errors'] = $validationerrors;
                 }
             }
 

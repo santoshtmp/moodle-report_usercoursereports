@@ -30,15 +30,19 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
     /**
      * Fetches and updates the report table via AJAX.
      * @param {string} formquerystring
+     * @param {bool} formdata
      */
-    function getFilterReportTable(formquerystring) {
+    function getFilterReportTable(formquerystring, formdata) {
         $('#' + filterAreaId).attr('aria-busy', 'true');
         $('#' + applyFilterBtnId).prop('disabled', true);
         $('#filter-loading-wrapper').show();
         // Make AJAX call.
         const request = {
             methodname: 'report_usercoursereports_get_report_table',
-            args: {querystring: formquerystring}
+            args: {
+                querystring: formquerystring,
+                formdata: formdata,
+            }
         };
         const ajaxrequest = Ajax.call([request])[0];
         ajaxrequest.done(function(response) {
@@ -151,28 +155,35 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
         // Reset all fields inside wrappers.
         form.find(".usercoursereports-filter-field").each(function() {
             var $wrapper = $(this);
-
-            $wrapper.find('input, select, textarea').each(function() {
+            const selectDateEnableID = [
+                'id_startdatefrom_enabled',
+                'id_startdateto_enabled',
+                'id_createdfrom_enabled',
+                'id_createdto_enabled',
+            ];
+            $wrapper.find('input, select').each(function() {
                 var $el = $(this);
                 var type = $el.attr('type');
-
+                var id = $el.attr('id');
                 if ($el.is('select')) {
                     if ($el.find('option[value="0"]').length) {
                         $el.val('0');
                     } else if ($el.find('option[value="all"]').length) {
                         $el.val('all');
                     }
-                } else if (type === 'checkbox' || type === 'radio') {
-                    $el.prop('checked', false);
+                } else if (type === 'checkbox') {
+                    if (selectDateEnableID.includes(id)) {
+                        $el.prop('checked', true);
+                        $el.parent().trigger('click');
+                    } else {
+                        $el.prop('checked', false);
+                    }
                 } else if (type === 'number') {
                     $el.val($el.attr('default-value') || 50);
                 } else {
                     $el.val('');
                 }
             });
-
-            // Trigger change if any UI plugin relies on it.
-            $wrapper.find('input, select, textarea').trigger('change');
         });
         return true;
     }
@@ -204,7 +215,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 if (clickedButton !== 'cancel') {
                     e.preventDefault();
                     const formquerystring = $(this).serialize();
-                    getFilterReportTable(formquerystring);
+                    getFilterReportTable(formquerystring, true);
                 }
             });
 
@@ -213,7 +224,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
-                    getFilterReportTable(formquerystring);
+                    getFilterReportTable(formquerystring, false);
                 }
             });
 
@@ -222,7 +233,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
-                    getFilterReportTable(formquerystring);
+                    getFilterReportTable(formquerystring, false);
                 }
             });
 
@@ -231,7 +242,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 e.preventDefault();
                 const formquerystring = $(this).attr('href').split('?')[1];
                 if (formquerystring) {
-                    getFilterReportTable(formquerystring);
+                    getFilterReportTable(formquerystring, false);
                     return formReset(filterFormId);
                 }
                 return false;
@@ -248,7 +259,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
-                    getFilterReportTable(formquerystring);
+                    getFilterReportTable(formquerystring, false);
                     return formReset(filterFormId);
                 }
                 return true;
@@ -276,7 +287,7 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                     formquerystring = url.searchParams.toString();
                 }
                 if (formquerystring) {
-                    getFilterReportTable(formquerystring);
+                    getFilterReportTable(formquerystring, false);
                 }
             }
 
