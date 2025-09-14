@@ -40,7 +40,6 @@ require_once($CFG->libdir . '/formslib.php');
  *
  */
 class filter_form extends \moodleform {
-
     /**
      * Form definition.
      */
