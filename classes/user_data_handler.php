@@ -40,7 +40,6 @@ use moodle_url;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class user_data_handler {
-
     /**
      * Returns a human-readable date/time string.
      *
@@ -165,7 +164,7 @@ class user_data_handler {
                 if (!empty($formfield->data)) {
                     $usercustomfields[] = [
                         'name' => $formfield->field->name, // ... Human-readable name
-                        'value' => $formfield->data,       // ... Raw value
+                        'value' => $formfield->data, // ... Raw value
                         'displayvalue' => $formfield->display_data(), // ... Formatted value
                         'type' => $formfield->field->datatype,
                         'shortname' => $formfield->field->shortname,
@@ -420,7 +419,7 @@ class user_data_handler {
             if (in_array(-1, $roleids)) {
                 $adminids = explode(',', $CFG->siteadmins);
                 if (count($adminids) > 0) {
-                    list($insql, $inparams) = $DB->get_in_or_equal($adminids, SQL_PARAMS_NAMED, 'adminids');
+                    [$insql, $inparams] = $DB->get_in_or_equal($adminids, SQL_PARAMS_NAMED, 'adminids');
                     $sqlparams = array_merge($sqlparams, $inparams);
                     $rolewherecondition[] = "u.id $insql";
                 }
@@ -432,7 +431,7 @@ class user_data_handler {
             // ... now again if there are real roles user roles
             if (count($roleids) > 0) {
                 $jointable['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
-                list($insql, $inparams) = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
+                [$insql, $inparams] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
                 $sqlparams = array_merge($sqlparams, $inparams);
                 $rolewherecondition[] = "ra.roleid $insql";
             }
@@ -443,14 +442,13 @@ class user_data_handler {
         }
         // ... search by course ids
         if (is_array($courseids) && count($courseids) > 0) {
-
             $jointable['role_assignments'] = "INNER JOIN {role_assignments} ra ON u.id = ra.userid";
             $jointable['context'] = "INNER JOIN {context} ctx ON ra.contextid = ctx.id";
 
             $sqlparams['contextlevel'] = CONTEXT_COURSE;
             $wherecondition[] = 'ctx.contextlevel = :contextlevel';
 
-            list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'courseids');
+            [$insql, $inparams] = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'courseids');
             $sqlparams = array_merge($sqlparams, $inparams);
             $wherecondition[] = "ctx.instanceid $insql";
         }
@@ -641,7 +639,7 @@ class user_data_handler {
             if (in_array(-1, $roleids)) {
                 $adminids = explode(',', $CFG->siteadmins);
                 if (count($adminids) > 0) {
-                    list($insql, $inparams) = $DB->get_in_or_equal($adminids, SQL_PARAMS_NAMED, 'adminids');
+                    [$insql, $inparams] = $DB->get_in_or_equal($adminids, SQL_PARAMS_NAMED, 'adminids');
                     $sqlparams = array_merge($sqlparams, $inparams);
                     $rolewherecondition[] = "u.id $insql";
                 }
@@ -652,7 +650,7 @@ class user_data_handler {
             });
             // ... now again if there are real roles user roles
             if (count($roleids) > 0) {
-                list($insql, $inparams) = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
+                [$insql, $inparams] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleids');
                 $sqlparams = array_merge($sqlparams, $inparams);
                 $rolewherecondition[] = "ra.roleid $insql";
             }
@@ -664,7 +662,7 @@ class user_data_handler {
                 $sqlparams['contextlevel'] = CONTEXT_COURSE;
                 $wherecondition[] = 'ctx.contextlevel = :contextlevel';
 
-                list($insql, $inparams) = $DB->get_in_or_equal($courseid, SQL_PARAMS_NAMED, 'courseid');
+                [$insql, $inparams] = $DB->get_in_or_equal($courseid, SQL_PARAMS_NAMED, 'courseid');
                 $sqlparams = array_merge($sqlparams, $inparams);
                 $wherecondition[] = "ctx.instanceid $insql";
             }
@@ -698,7 +696,7 @@ class user_data_handler {
         $userfields = 'u.*, ra.roleid as roleid, ula.timeaccess as lastcourseaccess';
 
         // This builds SQL for enrolled users (subquery).
-        list($esql, $params) = get_enrolled_sql($context, $withcapability, $groupid, $onlyactive);
+        [$esql, $params] = get_enrolled_sql($context, $withcapability, $groupid, $onlyactive);
 
         $sql = "SELECT $userfields
             FROM {user} u

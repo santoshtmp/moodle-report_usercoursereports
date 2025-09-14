@@ -40,7 +40,6 @@ require_once($CFG->libdir . '/formslib.php');
  *
  */
 class singlesearch extends \moodleform {
-
     /**
      * Form definition.
      */

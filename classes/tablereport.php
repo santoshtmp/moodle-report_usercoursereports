@@ -41,7 +41,6 @@ use stdClass;
  *
  */
 class tablereport {
-
     /**
      * Default number of records per page.
      *
@@ -342,7 +341,7 @@ class tablereport {
                         html_writer::tag(
                             'div',
                             html_writer::tag('span', $record->firstname . ' ' . $record->lastname) .
-                                html_writer::tag('span',  '(' . $record->username . ')'),
+                                html_writer::tag('span', '(' . $record->username . ')'),
                             ['class' => 'pl-3 d-flex flex-column justify-content-start']
                         ),
                     ['class' => 'd-flex justify-content-start']

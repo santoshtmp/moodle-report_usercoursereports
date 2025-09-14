@@ -39,7 +39,6 @@ use stdClass;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class course_data_handler {
-
     /**
      * Get custom certificate module information for a course.
      *
@@ -181,7 +180,6 @@ class course_data_handler {
      * @return array|string Progress context (percent) or empty string.
      */
     public function get_section_progress($courseref, $section) {
-
         global $USER, $COURSE;
         $course = $this->check_course($courseref);
         $context = \context_course::instance($COURSE->id);
@@ -237,7 +235,7 @@ class course_data_handler {
         // Output section completion data.
         $templatecontext = [];
         if ($total > 0) {
-            $completion = new stdClass;
+            $completion = new stdClass();
             $completion->complete = $complete;
             $completion->total = $total;
 
@@ -577,7 +575,7 @@ class course_data_handler {
         }
         // ... search by category id
         if (is_array($categoryids) && count($categoryids) > 0) {
-            list($insql, $inparams) = $DB->get_in_or_equal($categoryids, SQL_PARAMS_NAMED, 'categoryid');
+            [$insql, $inparams] = $DB->get_in_or_equal($categoryids, SQL_PARAMS_NAMED, 'categoryid');
             $sqlparams = array_merge($sqlparams, $inparams);
             $wherecondition[] = "c.category $insql";
         }
