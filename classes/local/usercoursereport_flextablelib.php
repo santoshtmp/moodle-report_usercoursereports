@@ -25,8 +25,8 @@
 
 namespace report_usercoursereports\local;
 
+use core\output\html_writer;
 use core_table\flexible_table;
-use html_writer;
 use moodle_url;
 
 defined('MOODLE_INTERNAL') || die();
@@ -43,7 +43,6 @@ require_once($CFG->libdir . '/tablelib.php');
  *
  */
 class usercoursereport_flextablelib extends flexible_table {
-
     /** @var moodle_url the base url for the table */
     protected $reseturl = null;
 
@@ -56,7 +55,6 @@ class usercoursereport_flextablelib extends flexible_table {
      * @return void
      */
     public function print_nothing_to_display() {
-
         // Render the dynamic table header.
         echo $this->get_dynamic_table_html_start();
 

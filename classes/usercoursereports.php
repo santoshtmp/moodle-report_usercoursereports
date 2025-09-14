@@ -39,7 +39,6 @@ use report_usercoursereports\form\singlesearch;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class usercoursereports {
-
     /**
      * Retrieves and sanitizes request parameters for report generation.
      *

@@ -42,7 +42,6 @@ require_once($CFG->libdir . '/formslib.php');
  *
  */
 class filter_courseusers extends \moodleform {
-
     /**
      * Form definition.
      */

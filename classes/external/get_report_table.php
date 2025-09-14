@@ -45,7 +45,6 @@ use report_usercoursereports\usercoursereports;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_report_table extends external_api {
-
     /**
      * Defines the parameters expected by the API.
      *
