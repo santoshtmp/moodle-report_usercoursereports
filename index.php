@@ -24,6 +24,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core\exception\moodle_exception;
 use report_usercoursereports\form\filter_form;
 use report_usercoursereports\tablereport;
 use report_usercoursereports\usercoursereports;

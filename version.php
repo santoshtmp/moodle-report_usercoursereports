@@ -31,10 +31,10 @@ defined('MOODLE_INTERNAL') || die();
 $plugin->component = 'report_usercoursereports';
 
 // This is the named version.
-$plugin->release = '1.0.1';
+$plugin->release = '1.1.1';
 
 // This is the version of the plugin.
-$plugin->version = 2025090102;
+$plugin->version = 2025091400;
 
 // This is a stable release.
 $plugin->maturity = MATURITY_STABLE;
@@ -43,4 +43,4 @@ $plugin->maturity = MATURITY_STABLE;
 $plugin->requires = 2023041800;
 
 // This is the release of Moodle this plugin requires.
-$plugin->supported = [402, 405];
+$plugin->supported = [405, 500];

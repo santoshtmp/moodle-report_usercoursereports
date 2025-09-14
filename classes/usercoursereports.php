@@ -25,13 +25,10 @@
 
 namespace report_usercoursereports;
 
-use flexible_table;
-use grade_item;
-use html_writer;
+use core\output\html_writer;
 use moodle_url;
 use report_usercoursereports\form\filter_courseusers;
 use report_usercoursereports\form\singlesearch;
-use stdClass;
 
 /**
  * Handles generating reports for users and courses.

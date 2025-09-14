@@ -59,7 +59,7 @@ class singlesearch extends \moodleform {
                     'multiple' => false,
                     'noselectionstring' => get_string('allcourses', 'report_usercoursereports'),
                     'class' => 'usercoursereports-filter-field',
-                    'placeholder' => get_string('coursesearch'),
+                    'placeholder' => get_string('coursesearch', 'report_usercoursereports'),
                 ]
             );
         } else if ($type === 'user') {

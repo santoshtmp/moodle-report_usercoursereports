@@ -25,8 +25,8 @@
 
 namespace report_usercoursereports;
 
+use core\output\html_writer;
 use core_course\reportbuilder\local\formatters\enrolment;
-use html_writer;
 use moodle_url;
 use report_usercoursereports\local\usercoursereport_flextablelib;
 use stdClass;

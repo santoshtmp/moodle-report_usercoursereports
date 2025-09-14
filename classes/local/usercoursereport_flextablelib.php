@@ -25,6 +25,7 @@
 
 namespace report_usercoursereports\local;
 
+use core_table\flexible_table;
 use html_writer;
 use moodle_url;
 
@@ -41,7 +42,7 @@ require_once($CFG->libdir . '/tablelib.php');
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  */
-class usercoursereport_flextablelib extends \flexible_table {
+class usercoursereport_flextablelib extends flexible_table {
 
     /** @var moodle_url the base url for the table */
     protected $reseturl = null;
