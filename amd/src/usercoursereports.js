@@ -100,7 +100,6 @@ define(['jquery', 'core/ajax', 'core/str'], function($, Ajax, str) {
                 $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
                 $(this).attr('aria-expanded', true);
             }
-            $('#reportgeneraldetailcontent').toggle('show');
         });
 
         // Read more / show less for summary.
