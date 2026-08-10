@@ -68,7 +68,6 @@ jobs:
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
-          # MOODLE_APP: 'true'
 
       - name: PHP Lint
         if: ${{ !cancelled() }}
@@ -97,7 +96,9 @@ jobs:
 
       - name: Mustache Lint
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci mustache ./plugin
+        run: |
+          cd plugin
+          moodle-plugin-ci mustache .
 
       - name: Grunt
         if: ${{ !cancelled() }}

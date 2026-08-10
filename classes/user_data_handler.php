@@ -768,16 +768,16 @@ class user_data_handler {
             $userid = $USER->id;
         }
 
-        // Get course grade item (course total)
+        // Get course grade item (course total).
         $gradeitem = \grade_item::fetch_course_item($courseid);
 
         if (!$gradeitem) {
             return null;
         }
-        // Get user grade
+        // Get user grade.
         $grade = \grade_grade::fetch([
             'itemid' => $gradeitem->id,
-            'userid' => $userid
+            'userid' => $userid,
         ]);
 
         if (!$grade || is_null($grade->finalgrade)) {
