@@ -30,9 +30,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ["8.0", "8.1", "8.2"]
+        php: ["8.1", "8.2"]
         moodle-branch: ["MOODLE_405_STABLE"]
         database: [pgsql, mariadb]
+        extensions:
+          - mbstring, curl, dom, fileinfo, gd, intl, json, mysqli, pgsql, soap, zip
 
     steps:
       - name: Check out repository code
@@ -50,13 +52,16 @@ jobs:
           # If you try to use code coverage with "none", it will fallback to phpdbg (which has known problems).
           coverage: none
 
+      - name: Check PHP version
+        run: php -v
+
       - name: Initialise moodle-plugin-ci
         run: |
           composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
-          echo $(cd ci/bin; pwd) >> $GITHUB_PATH
-          echo $(cd ci/vendor/bin; pwd) >> $GITHUB_PATH
+          echo "$(cd ci/bin; pwd)" >> "$GITHUB_PATH"
+          echo "$(cd ci/vendor/bin; pwd)" >> "$GITHUB_PATH"
           sudo locale-gen en_AU.UTF-8
-          echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
+          echo "NVM_DIR=$HOME/.nvm" >> "$GITHUB_ENV"
 
       - name: Install moodle-plugin-ci
         run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1

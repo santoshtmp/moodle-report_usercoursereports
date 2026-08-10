@@ -170,7 +170,7 @@ class tablereport {
                         html_writer::tag(
                             'div',
                             format_string($record->fullname),
-                            ['class' => 'course-name pl-3 ']
+                            ['class' => 'course-name ']
                         ),
                     ['class' => 'course-link d-flex justify-content-start']
                 );
@@ -342,7 +342,7 @@ class tablereport {
                             'div',
                             html_writer::tag('span', $record->firstname . ' ' . $record->lastname) .
                                 html_writer::tag('span', '(' . $record->username . ')'),
-                            ['class' => 'pl-3 d-flex flex-column justify-content-start']
+                            ['class' => 'd-flex flex-column justify-content-start']
                         ),
                     ['class' => 'd-flex justify-content-start']
                 );
@@ -511,6 +511,7 @@ class tablereport {
             'courserole',
             'groups',
             'progress',
+            'finalgrademark',
             'enrolldate',
             'enrollmethod',
             'lastcourseaccess',
@@ -522,12 +523,13 @@ class tablereport {
             get_string('courserole', 'report_usercoursereports'),
             get_string('groups'),
             get_string('courseprogress', 'report_usercoursereports'),
+            get_string('finalgrademark', 'report_usercoursereports'),
             get_string('enrolldate', 'report_usercoursereports'),
             get_string('enrolmentmethods', 'report_usercoursereports'),
             get_string('lastcourseaccess'),
             get_string('status'),
         ];
-        $nosorting = ['sn', 'courserole', 'groups', 'progress', 'enrolldate', 'enrollmethod', 'status'];
+        $nosorting = ['sn', 'courserole', 'groups', 'progress', 'finalgrademark', 'enrolldate', 'enrollmethod', 'status'];
         $tablename = 'course-enrolled-users';
         $tableattributes = [
             'id' => $tablename,
@@ -600,6 +602,7 @@ class tablereport {
                 $row[] = implode(", ", array_column($courseroles, 'name'));
                 $row[] = implode(", ", array_column($groups, 'name'));
                 $row[] = user_data_handler::get_user_course_progress($course, $record->id) . '%';
+                $row[] = user_data_handler::get_user_course_grade($record->id, $course->id)?->finalgrade ?? 0;
                 $row[] = implode(", ", $enrolldate);
                 $row[] = implode(", ", $enrollmethod);
                 $row[] = user_data_handler::get_user_date_time($record->lastcourseaccess, '');
@@ -628,7 +631,7 @@ class tablereport {
                                     '(' . $record->email . ')',
                                     ['user-field' => 'email', 'title' => 'email', 'class' => 'break-anywhere']
                                 ),
-                            ['class' => 'pl-3 d-flex flex-column justify-content-start']
+                            ['class' => 'd-flex flex-column justify-content-start']
                         ),
                     ['class' => 'd-flex justify-content-start ']
                 );
@@ -641,6 +644,7 @@ class tablereport {
                     ['style' => 'list-style: none; padding-left: 0; margin: 0;']
                 );
                 $row[] = user_data_handler::get_user_course_progress($course, $record->id) . '%';
+                $row[] = user_data_handler::get_user_course_grade($record->id, $course->id)?->finalgrade ?? 0;
                 $row[] = html_writer::alist($enrolldate, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
                 $row[] = html_writer::alist($enrollmethod, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
                 $row[] = html_writer::tag(
@@ -706,6 +710,7 @@ class tablereport {
             'courserole',
             'groups',
             'courseprogress',
+            'finalgrademark',
             'enrolldate',
             'enrolmentmethods',
             'lastcourseaccess',
@@ -717,6 +722,7 @@ class tablereport {
             get_string('courserole', 'report_usercoursereports'),
             get_string('groups'),
             get_string('courseprogress', 'report_usercoursereports'),
+            get_string('finalgrademark', 'report_usercoursereports'),
             get_string('enrolldate', 'report_usercoursereports'),
             get_string('enrolmentmethods', 'report_usercoursereports'),
             get_string('lastcourseaccess'),
@@ -804,6 +810,7 @@ class tablereport {
                 $row[] = implode(", ", array_column($courseroles, 'name'));
                 $row[] = implode(", ", array_column($groups, 'name'));
                 $row[] = user_data_handler::get_user_course_progress($record, $userid) . '%';
+                $row[] = user_data_handler::get_user_course_grade($userid, $record->id)?->finalgrade ?? 0;
                 $row[] = implode(", ", $enrolldate);
                 $row[] = implode(", ", $enrollmethod);
                 $row[] = user_data_handler::get_user_date_time($record->lastcourseaccess, '');
@@ -821,7 +828,7 @@ class tablereport {
                             'div',
                             html_writer::tag('span', format_string($record->fullname)) .
                                 html_writer::tag('span', "(" . format_string($coursecategories->name) . ")"),
-                            ['class' => 'course-name pl-3 d-flex flex-column justify-content-start']
+                            ['class' => 'course-name d-flex flex-column justify-content-start']
                         ),
                     ['class' => 'course-link d-flex justify-content-start']
                 );
@@ -834,6 +841,7 @@ class tablereport {
                     ['style' => 'list-style: none; padding-left: 0; margin: 0;']
                 );
                 $row[] = user_data_handler::get_user_course_progress($record, $userid) . '%';
+                $row[] = user_data_handler::get_user_course_grade($userid, $record->id)?->finalgrade ?? 0;
                 $row[] = html_writer::alist($enrolldate, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
                 $row[] = html_writer::alist($enrollmethod, ['style' => 'list-style: none; padding-left: 0; margin: 0;']);
                 $row[] = html_writer::tag(
