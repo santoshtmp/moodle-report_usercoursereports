@@ -93,7 +93,7 @@
                 </div>
                 
                  <div class="mt-4">
-                    <h4><i class="fa fa-users-cog text-primary"></i><span class="ml-2">{{#str}} enrolmentmethods,report_usercoursereports {{/str}}</span></h4>
+                    <h4><i class="fa fa-users-cog text-primary"></i><span class="m-2">{{#str}} enrolmentmethods,report_usercoursereports {{/str}}</span></h4>
                     <ul class="list-unstyled ms-2">
                         {{#courseinfo.enrollment_methods}}
                             <li class="d-flex align-items-center mb-2">
@@ -116,7 +116,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <h4><i class="fa fa-layer-group text-primary"></i><span class="ml-2">{{#str}} groups {{/str}}</span></h4>
+                    <h4><i class="fa fa-layer-group text-primary"></i><span class="m-2">{{#str}} groups {{/str}}</span></h4>
                     <ul class="list-inline">
                         {{#courseinfo.groups}}
                             <li class="list-inline-item badge bg-secondary px-3 py-2 m-1">{{name}}</li>
@@ -131,7 +131,7 @@
             </div>
 
             <div class="col-md-8">
-                <h4><i class="fa fa-book text-primary"></i><span class="ml-2">{{#str}} coursedetails {{/str}}</span></h4>
+                <h4><i class="fa fa-book text-primary"></i><span class="m-2">{{#str}} coursedetails {{/str}}</span></h4>
                 <ul class="list-group list-group-flush list-grid">
                     <li class="list-group-item">
                         <strong>{{#str}} fullnamecourse {{/str}}:</strong> 
@@ -178,7 +178,7 @@
                     {{#courseinfo.course_customfields}}
                         <li class="list-group-item">
                             <strong>{{name}}:</strong>
-                            <span>{{value}}</span>
+                            <span>{{{value}}}</span>
                         </li>
                     {{/courseinfo.course_customfields}}
                     <li class="list-group-item">
@@ -224,7 +224,7 @@
         </div>
         
         <div class="mt-4">
-            <h4><i class="fa fa-info-circle me-2 text-primary"></i><span class="ml-2">{{#str}} coursesummary {{/str}}</span></h4>
+            <h4><i class="fa fa-info-circle me-2 text-primary"></i><span class="m-2">{{#str}} coursesummary {{/str}}</span></h4>
         
             <div class="course-summary mt-3 mb-3 text-muted collapsed-summary">
                 <p>{{{courseinfo.summary}}}</p>

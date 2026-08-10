@@ -95,3 +95,4 @@ $string['readmore'] = 'Read more';
 $string['showless'] = 'Show less';
 $string['searchusers'] = 'Search users';
 $string['coursesearch'] = 'Course users';
+$string['finalgrademark'] = 'Final grade mark';

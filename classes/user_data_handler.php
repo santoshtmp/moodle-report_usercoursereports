@@ -750,4 +750,49 @@ class user_data_handler {
         $mycourses = enrol_get_all_users_courses($userid, false, '*', 'visible DESC, fullname ASC, sortorder ASC');
         return $mycourses;
     }
+
+    /**
+     * Returns the user's course grade.
+     *
+     * @param int|null $userid User ID (null for current user).
+     * @param int $courseid Course ID.
+     * @return stdClass|null
+     */
+    public static function get_user_course_grade($userid, $courseid) {
+        global $CFG, $USER;
+
+        require_once($CFG->libdir . '/gradelib.php');
+        require_once($CFG->libdir . '/grade/grade_item.php');
+
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
+
+        // Get course grade item (course total)
+        $gradeitem = \grade_item::fetch_course_item($courseid);
+
+        if (!$gradeitem) {
+            return null;
+        }
+        // Get user grade
+        $grade = \grade_grade::fetch([
+            'itemid' => $gradeitem->id,
+            'userid' => $userid
+        ]);
+
+        if (!$grade || is_null($grade->finalgrade)) {
+            return null;
+        }
+
+        $result = new stdClass();
+        $result->finalgrade = round($grade->finalgrade, 2);
+        $result->grademax   = round($gradeitem->grademax, 2);
+        $result->gradepercentage = $gradeitem->grademax > 0
+            ? round(($grade->finalgrade / $gradeitem->grademax) * 100, 2)
+            : null;
+        $result->formatted  = \grade_format_gradevalue($grade->finalgrade, $gradeitem);
+        $result->feedback   = $grade->feedback ?? null;
+
+        return $result;
+    }
 }
